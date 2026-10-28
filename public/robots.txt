@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://byggflyt-no.vercel.app/sitemap.xml
