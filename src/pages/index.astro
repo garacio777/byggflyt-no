@@ -13,40 +13,142 @@ import { MUNICIPALITIES } from "../data/municipalities.js";
 >
   <section class="hero-section">
     <div class="container">
-      <div class="eyebrow-row">
-        <span class="badge badge-amber">ØSTLANDET B2B ANLEGGSPORTAL</span>
-        <span class="badge badge-emerald">MODULUS-11 / BRREG VERIFISERT</span>
+      <div class="hero-split">
+        <div>
+          <div class="eyebrow-row">
+            <span class="badge badge-amber">ØSTLANDET B2B ANLEGGSPORTAL</span>
+            <span class="badge badge-emerald">MODULUS-11 / BRREG VERIFISERT</span>
+          </div>
+          <h1 class="hero-title">
+            Dimensjoner rigg, maskin og vinterdrift på 30 sekunder — bestill direkte fra lokal fagpartner
+          </h1>
+          <p class="hero-lead">
+            Slutt på PDF-kataloger, feildimensjonert utstyr og anbudstjenester som selger telefonnummeret ditt til fem selgere.
+            Bruk våre deterministiske 06:45-feltkalkulatorer og send ferdig spesifisert EHF-oppdrag til ett lokalt depot nær byggeplassen.
+          </p>
+          <div class="hero-actions">
+            <a href="#kalkulator" class="btn btn-primary">Åpne 06:45 feltkalkulator ↓</a>
+            <a href="#kategorier" class="btn btn-outline-light">Se maskinkatalog (5 fag)</a>
+            <a href="/bli-partner/" class="btn btn-outline-light">Lei eksklusivt territorium →</a>
+          </div>
+
+          <div class="kpi-white-grid">
+            <div class="kpi-white-card">
+              <span class="kpi-white-num">50 soner</span>
+              <span class="kpi-white-label">10 regioner × 5 fag</span>
+            </div>
+            <div class="kpi-white-card">
+              <span class="kpi-white-num">100 % B2B</span>
+              <span class="kpi-white-label">Brreg / EHF-sjekket</span>
+            </div>
+            <div class="kpi-white-card">
+              <span class="kpi-white-num">15–30 min</span>
+              <span class="kpi-white-label">Responstid vakt/depot</span>
+            </div>
+            <div class="kpi-white-card">
+              <span class="kpi-white-num">1 aktør</span>
+              <span class="kpi-white-label">Null anbudsspam</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-visual-stack">
+          <div class="hero-photo-frame">
+            <img
+              src="/images/hero-nordic-rigg.webp"
+              alt="Norsk byggeplass kl. 06:45 med beltegraver, leddbomlift, byggegjerde og opplyst brakkerigg"
+              width="1280"
+              height="720"
+              fetchpriority="high"
+              class="hero-photo-img"
+            />
+            <div class="telemetry-hud-bar">
+              <span class="telemetry-pill">TELE 140–180 CM</span>
+              <span class="telemetry-pill">63A / BESS KONTROLL</span>
+              <span class="telemetry-pill">MARKTRYKK kN/m²</span>
+              <span class="telemetry-pill">TEK17 ≥70%</span>
+            </div>
+          </div>
+
+          <form class="quick-finder-card" data-quick-route-form>
+            <div class="quick-finder-title">
+              <span>Finn lokal pris, teledybde &amp; kalkulator på postnummer</span>
+              <span class="badge badge-partner-open">DIREKTE OPPSLAG</span>
+            </div>
+            <div class="quick-finder-row">
+              <label class="field-group">
+                <span class="field-label">Kommune / Region</span>
+                <select class="field-select" data-quick-mun aria-label="Velg kommune eller region">
+                  {
+                    MUNICIPALITIES.map((mun) => (
+                      <option value={mun.slug} selected={mun.slug === "nordre-follo-aas"}>
+                        {mun.name} ({mun.postalRange})
+                      </option>
+                    ))
+                  }
+                </select>
+              </label>
+              <label class="field-group">
+                <span class="field-label">Maskin / Fagområde</span>
+                <select class="field-select" data-quick-cat aria-label="Velg fagområde">
+                  {
+                    CATEGORIES.map((cat) => (
+                      <option value={cat.slug}>{cat.shortTitle}</option>
+                    ))
+                  }
+                </select>
+              </label>
+              <button type="submit" class="btn btn-primary">
+                Åpne sone →
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
-      <h1 class="hero-title">
-        Dimensjoner rigg, maskin og vinterdrift på 30 sekunder — bestill direkte fra lokal fagpartner
-      </h1>
-      <p class="hero-lead">
-        Slutt på PDF-kataloger, feildimensjonert utstyr og anbudstjenester som selger telefonnummeret ditt til fem selgere.
-        Bruk våre deterministiske 06:45-feltkalkulatorer og send ferdig spesifisert EHF-oppdrag til ett lokalt depot nær byggeplassen.
-      </p>
-      <div class="hero-actions">
-        <a href="#kalkulator" class="btn btn-primary">Åpne feltkalkulator ↓</a>
-        <a href="#omrader" class="btn btn-outline-light">Velg kommune / region (10)</a>
-        <a href="/bli-partner/" class="btn btn-outline-light">For utleiere: Lei eksklusivt territorium →</a>
+    </div>
+  </section>
+
+  <section class="section-block section-subtle" id="kategorier">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">Populære maskin- og riggkategorier — med innebygd dimensjonering</h2>
+        <p class="section-desc">
+          Velg fagkategori for å se tekniske spesifikasjoner, lovpålagte sertifikater og veiledende døgnsatser.
+        </p>
       </div>
 
-      <div class="hero-stats-grid">
-        <div class="stat-card-dark">
-          <span class="stat-label">Dekningskart v1</span>
-          <span class="stat-value">10 regioner • 50 fagsoner</span>
-        </div>
-        <div class="stat-card-dark">
-          <span class="stat-label">Kvalifisering</span>
-          <span class="stat-value">Kun aktive foretak (Brreg)</span>
-        </div>
-        <div class="stat-card-dark">
-          <span class="stat-label">Teknisk kontroll</span>
-          <span class="stat-value">Marktrykk • kW • BESS • TEK17</span>
-        </div>
-        <div class="stat-card-dark">
-          <span class="stat-label">Ingen priskrig-spam</span>
-          <span class="stat-value">1 eksklusiv partner per sone</span>
-        </div>
+      <div class="grid-3">
+        {
+          CATEGORIES.map((cat) => (
+            <a href={`/kategorier/${cat.slug}/`} class="card-catalog">
+              <div class="card-media-wrap">
+                <img
+                  src={cat.imageSrc}
+                  alt={cat.imageAlt}
+                  width="800"
+                  height="600"
+                  loading="lazy"
+                  class="card-media-img"
+                />
+                <span class="card-badge-overlay">{cat.badgeCode}</span>
+                <span class="card-rate-pill">Fra {cat.baseDailyRateNok.toLocaleString("nb-NO")} kr/døgn</span>
+              </div>
+              <div class="card-catalog-body">
+                <h3 class="card-title">{cat.shortTitle}</h3>
+                <div class="spec-chip-row">
+                  {cat.telemetrySpecs.map((spec) => (
+                    <span class="spec-chip">{spec}</span>
+                  ))}
+                </div>
+                <p class="card-text">{cat.heroTagline}</p>
+                <div class="card-meta">
+                  <span>Prosjektramme: {cat.typicalTicketRangeNok}</span>
+                  <span>Åpne →</span>
+                </div>
+              </div>
+            </a>
+          ))
+        }
       </div>
     </div>
   </section>
@@ -63,36 +165,7 @@ import { MUNICIPALITIES } from "../data/municipalities.js";
     </div>
   </section>
 
-  <section class="section-block section-subtle" id="kategorier">
-    <div class="container">
-      <div class="section-header">
-        <h2 class="section-title">5 høy-kritiske B2B-fagområder i bygge- og anleggsbransjen</h2>
-        <p class="section-desc">
-          Hvert fagområde har egne dimensjoneringsverktøy, HMS-/forskriftskrav og lokale leveransekorridorer.
-        </p>
-      </div>
-
-      <div class="grid-3">
-        {
-          CATEGORIES.map((cat) => (
-            <a href={`/kategorier/${cat.slug}/`} class="card card-interactive">
-              <div class="eyebrow-row">
-                <span class="badge badge-light">{cat.badgeCode}</span>
-              </div>
-              <h3 class="card-title">{cat.shortTitle}</h3>
-              <p class="card-text">{cat.heroTagline}</p>
-              <div class="card-meta">
-                <span>Typisk ramme: {cat.typicalTicketRangeNok}</span>
-                <span>Åpne fagportal →</span>
-              </div>
-            </a>
-          ))
-        }
-      </div>
-    </div>
-  </section>
-
-  <section class="section-block" id="omrader">
+  <section class="section-block section-subtle" id="omrader">
     <div class="container">
       <div class="section-header">
         <h2 class="section-title">Velg region på Østlandet — lokale grunnforhold, teledybde og miljøkrav</h2>
@@ -129,13 +202,13 @@ import { MUNICIPALITIES } from "../data/municipalities.js";
     </div>
   </section>
 
-  <section class="section-block section-subtle">
+  <section class="section-block">
     <div class="container">
       <LeadCaptureForm />
     </div>
   </section>
 
-  <section class="section-block">
+  <section class="section-block section-subtle">
     <div class="container">
       <div class="partner-callout">
         <div>

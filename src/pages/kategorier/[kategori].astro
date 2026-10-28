@@ -26,20 +26,40 @@ const { category } = Astro.props;
 >
   <section class="hero-section">
     <div class="container">
-      <nav class="breadcrumb-nav" aria-label="Brødsmulesti">
-        <a href="/">Hjem</a>
-        <span>/</span>
-        <span>{category.shortTitle}</span>
-      </nav>
-      <div class="eyebrow-row">
-        <span class="badge badge-amber">{category.badgeCode}</span>
-        <span class="badge badge-emerald">TYPISK RAMME: {category.typicalTicketRangeNok}</span>
-      </div>
-      <h1 class="hero-title">{category.title}</h1>
-      <p class="hero-lead">{category.heroTagline}</p>
-      <div class="hero-actions">
-        <a href="#fagkalkulator" class="btn btn-primary">Åpne {category.calculatorTitle} ↓</a>
-        <a href="#bestill" class="btn btn-outline-light">Send direkte B2B-forespørsel</a>
+      <div class="hero-split">
+        <div>
+          <nav class="breadcrumb-nav" aria-label="Brødsmulesti">
+            <a href="/">Hjem</a>
+            <span>/</span>
+            <span>{category.shortTitle}</span>
+          </nav>
+          <div class="eyebrow-row">
+            <span class="badge badge-amber">{category.badgeCode}</span>
+            <span class="badge badge-emerald">FRA {category.baseDailyRateNok.toLocaleString("nb-NO")} KR/DØGN</span>
+          </div>
+          <h1 class="hero-title">{category.title}</h1>
+          <p class="hero-lead">{category.heroTagline}</p>
+          <div class="eyebrow-row">
+            {category.telemetrySpecs.map((spec) => (
+              <span class="badge badge-amber">{spec}</span>
+            ))}
+          </div>
+          <div class="hero-actions">
+            <a href="#fagkalkulator" class="btn btn-primary">Åpne {category.calculatorTitle} ↓</a>
+            <a href="#bestill" class="btn btn-outline-light">Send direkte B2B-forespørsel</a>
+          </div>
+        </div>
+
+        <div class="subhero-media-card">
+          <img
+            src={category.imageSrc}
+            alt={category.imageAlt}
+            width="800"
+            height="600"
+            fetchpriority="high"
+            class="subhero-media-img"
+          />
+        </div>
       </div>
     </div>
   </section>

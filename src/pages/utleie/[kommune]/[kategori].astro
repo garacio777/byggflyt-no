@@ -63,48 +63,70 @@ const localFaqs = [
 
     <section class="hero-section">
       <div class="container">
-        <nav class="breadcrumb-nav" aria-label="Brødsmulesti">
-          <a href="/">Hjem</a>
-          <span>/</span>
-          <a href={`/omrader/${municipality.slug}/`}>{municipality.name}</a>
-          <span>/</span>
-          <span>{category.shortTitle}</span>
-        </nav>
+        <div class="hero-split">
+          <div>
+            <nav class="breadcrumb-nav" aria-label="Brødsmulesti">
+              <a href="/">Hjem</a>
+              <span>/</span>
+              <a href={`/omrader/${municipality.slug}/`}>{municipality.name}</a>
+              <span>/</span>
+              <span>{category.shortTitle}</span>
+            </nav>
 
-        <div class="eyebrow-row">
-          <span class="badge badge-amber">{municipality.shortName.toUpperCase()} • {category.badgeCode}</span>
-          <span class="badge badge-emerald">POSTNR. {municipality.postalRange}</span>
-        </div>
+            <div class="eyebrow-row">
+              <span class="badge badge-amber">{municipality.shortName.toUpperCase()} • {category.badgeCode}</span>
+              <span class="badge badge-emerald">POSTNR. {municipality.postalRange}</span>
+            </div>
 
-        <h1 class="hero-title">
-          {category.shortTitle} i {municipality.name}
-        </h1>
-        <p class="hero-lead" itemprop="description">
-          {category.heroTagline} Tilpasset byggeplasser i {municipality.keyHubs.join(", ")} med rask levering langs{" "}
-          {municipality.logisticsCorridors}.
-        </p>
+            <h1 class="hero-title">
+              {category.shortTitle} i {municipality.name}
+            </h1>
+            <p class="hero-lead" itemprop="description">
+              {category.heroTagline} Tilpasset byggeplasser i {municipality.keyHubs.join(", ")} med rask levering langs{" "}
+              {municipality.logisticsCorridors}.
+            </p>
 
-        <div class="hero-actions">
-          <a href="#lokal-kalkulator" class="btn btn-primary">Beregn spesifikasjon nå ↓</a>
-          <a href="#bestill" class="btn btn-outline-light">Gå rett til B2B-bestilling</a>
-        </div>
+            <div class="hero-actions">
+              <a href="#lokal-kalkulator" class="btn btn-primary">Beregn spesifikasjon nå ↓</a>
+              <a href="#bestill" class="btn btn-outline-light">Gå rett til B2B-bestilling</a>
+            </div>
 
-        <div class="hero-stats-grid">
-          <div class="stat-card-dark">
-            <span class="stat-label">Veiledende oppdragsramme</span>
-            <span class="stat-value">{category.typicalTicketRangeNok}</span>
+            <div class="kpi-white-grid">
+              <div class="kpi-white-card">
+                <span class="kpi-white-num">Fra {category.baseDailyRateNok.toLocaleString("nb-NO")} kr</span>
+                <span class="kpi-white-label">Veiledende døgnsats</span>
+              </div>
+              <div class="kpi-white-card">
+                <span class="kpi-white-num">{municipality.frostDepthCm} cm</span>
+                <span class="kpi-white-label">Telefri dybde ({municipality.designWinterTempC} °C)</span>
+              </div>
+              <div class="kpi-white-card">
+                <span class="kpi-white-num">15–30 min</span>
+                <span class="kpi-white-label">SLA lokalt depot</span>
+              </div>
+              <div class="kpi-white-card">
+                <span class="kpi-white-num">EHF / AS</span>
+                <span class="kpi-white-label">Brreg-verifisert</span>
+              </div>
+            </div>
           </div>
-          <div class="stat-card-dark">
-            <span class="stat-label">Lokal maskinflytting</span>
-            <span class="stat-value">{municipality.flatbedTransferNokRange}</span>
-          </div>
-          <div class="stat-card-dark">
-            <span class="stat-label">Vinter / Tele i {municipality.shortName}</span>
-            <span class="stat-value">{municipality.designWinterTempC} °C / {municipality.frostDepthCm} cm</span>
-          </div>
-          <div class="stat-card-dark">
-            <span class="stat-label">Sonekode</span>
-            <span class="stat-value">{slotInfo.slotKey}</span>
+
+          <div class="hero-photo-frame">
+            <img
+              src={category.imageSrc}
+              alt={`${category.shortTitle} levert til byggeplass i ${municipality.name}`}
+              width="800"
+              height="600"
+              itemprop="image"
+              fetchpriority="high"
+              class="subhero-media-img"
+            />
+            <div class="telemetry-hud-bar">
+              {category.telemetrySpecs.map((spec) => (
+                <span class="telemetry-pill">{spec}</span>
+              ))}
+              <span class="telemetry-pill">FLYTTING: {municipality.flatbedTransferNokRange}</span>
+            </div>
           </div>
         </div>
       </div>

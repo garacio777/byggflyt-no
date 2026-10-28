@@ -372,5 +372,20 @@ function initLeadForms(): void {
   });
 }
 
+function initQuickRouteFinder(): void {
+  const quickForm = document.querySelector<HTMLFormElement>("[data-quick-route-form]");
+  if (!quickForm) return;
+
+  quickForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const munEl = quickForm.querySelector<HTMLSelectElement>("[data-quick-mun]");
+    const catEl = quickForm.querySelector<HTMLSelectElement>("[data-quick-cat]");
+    const mun = munEl?.value ?? "nordre-follo-aas";
+    const cat = catEl?.value ?? "maskinutleie";
+    window.location.assign(`/utleie/${encodeURIComponent(mun)}/${encodeURIComponent(cat)}/`);
+  });
+}
+
+initQuickRouteFinder();
 initCalculatorWidgets();
 initLeadForms();

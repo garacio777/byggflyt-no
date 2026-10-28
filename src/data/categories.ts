@@ -5,6 +5,9 @@ export interface CategoryProfile {
   readonly title: string;
   readonly shortTitle: string;
   readonly badgeCode: string;
+  readonly imageSrc: string;
+  readonly imageAlt: string;
+  readonly telemetrySpecs: readonly string[];
   readonly heroTagline: string;
   readonly calculatorTitle: string;
   readonly calculatorSubtitle: string;
@@ -24,6 +27,10 @@ export const CATEGORIES: readonly CategoryProfile[] = [
     title: "Maskinutleie, Gravemaskin og Komprimering",
     shortTitle: "Maskinutleie & Graving",
     badgeCode: "M2 / M4 / KOMP",
+    imageSrc: "/images/cat-maskinutleie.webp",
+    imageAlt:
+      "8,5-tonns korthekker beltegraver med tiltrotator og tung reversibel vibroplate på norsk anleggsplass",
+    telemetrySpecs: ["1,0–25 tonn", "El / Stage V", "Vibro 90–500 kg"],
     heroTagline:
       "Riktig tonnasje, skuffepakke og vibroplate levert på klokkeslett — både elektriske anleggsmaskiner og Stage V beltegravere.",
     calculatorTitle: "Gravemaskin- & Komprimerings-velger",
@@ -57,6 +64,10 @@ export const CATEGORIES: readonly CategoryProfile[] = [
     title: "Liftutleie, Personløfter og Fasadestillas",
     shortTitle: "Lift & Stillas",
     badgeCode: "A / B / C / §17",
+    imageSrc: "/images/cat-lift-og-stillas.webp",
+    imageAlt:
+      "16 meter 4WD leddbomlift, elektrisk sakslift og fasadestillas i aluminium montert ved næringsbygg",
+    telemetrySpecs: ["6–34 m høyde", "Marktrykk kN/m²", "4WD / Edderkopp"],
     heroTagline:
       "Dimensjoner arbeidshøyde, utlegg og maks marktrykk før transportbilen ruller ut — inkludert HMS-krav etter Arbeidstilsynet.",
     calculatorTitle: "Lift-, Stillas- & Marktrykk-velger",
@@ -90,6 +101,10 @@ export const CATEGORIES: readonly CategoryProfile[] = [
     title: "Vinterbygg: Teletining, Byggvarme og Byggtørk",
     shortTitle: "Vintervarme & Teletining",
     badgeCode: "VINTER / KW",
+    imageSrc: "/images/cat-vintervarme.webp",
+    imageAlt:
+      "Tilhengermontert væskebåren teletiner koblet til gule isolasjonsmatter på frossen norsk vinterbyggeplass",
+    telemetrySpecs: ["35–150 kW", "Væskebåren tele", "-22 °C dimensjonert"],
     heroTagline:
       "Null ståtid mandag kl. 07:00: beregn nøyaktig kW-effekt, tinetid og antall matter for frossen leire, betongherding og råbygg.",
     calculatorTitle: "Teletining- & Byggvarme-kalkulator (kW)",
@@ -123,6 +138,10 @@ export const CATEGORIES: readonly CategoryProfile[] = [
     title: "Byggestrøm, Batteribank (BESS) og Dag-1 Brakkerigg",
     shortTitle: "Byggestrøm & Brakkerigg",
     badgeCode: "NEK 400 / BESS",
+    imageSrc: "/images/cat-byggestrom-rigg.webp",
+    imageAlt:
+      "Mobil batteribank BESS koblet til gult 400V byggestrømskap ved moderne mannskapsvogn og byggegjerde",
+    telemetrySpecs: ["32A–250A 400V", "BESS 45–300 kWh", "4–24 pers rigg"],
     heroTagline:
       "Unngå at 63A-sikringen ryker når el-graver og byggvarme går samtidig — dimensjoner byggestrøm, batteribank og mannskapsvogn i ett steg.",
     calculatorTitle: "Utslippsfri Byggestrøm- & Brakkerigg-beregner",
@@ -156,6 +175,10 @@ export const CATEGORIES: readonly CategoryProfile[] = [
     title: "Containerutleie, Kranbil og Pukk/Masselevering (TEK17)",
     shortTitle: "Container, Kranbil & Masse",
     badgeCode: "TEK17 ≥70%",
+    imageSrc: "/images/cat-container-masse.webp",
+    imageAlt:
+      "Krokcontainer for kildesortering og kranbil som løfter storsekk med pukk på byggeplass",
+    telemetrySpecs: ["8–35 m³ krok/lift", "Boggi 13t / Semi 28t", "Kran 26–95 tm"],
     heroTagline:
       "Regn om fastmasse til løsmasse, tonn pukk og riktig containerfraksjon — slipp feilsorteringsgebyr og unødvendige bomturer med tippbil.",
     calculatorTitle: "Masse-, Tippbil- & TEK17 Container-kalkulator",

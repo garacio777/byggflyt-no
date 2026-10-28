@@ -27,37 +27,56 @@ const isStrictZeroEmission = municipality.emissionPolicyLevel === "STRENG_UTSLIP
 >
   <section class="hero-section">
     <div class="container">
-      <nav class="breadcrumb-nav" aria-label="Brødsmulesti">
-        <a href="/">Hjem</a>
-        <span>/</span>
-        <span>{municipality.name}</span>
-      </nav>
-      <div class="eyebrow-row">
-        <span class="badge badge-amber">{municipality.county.toUpperCase()} • POSTNR. {municipality.postalRange}</span>
-        <span class="badge badge-emerald">DIM. VINTERTEMP: {municipality.designWinterTempC} °C</span>
-      </div>
-      <h1 class="hero-title">Rigg, Maskinutleie og Byggedrift i {municipality.name}</h1>
-      <p class="hero-lead">
-        Dekker byggeplasser i {municipality.keyHubs.join(", ")}. Dimensjoner riktig utstyr etter lokale grunnforhold,
-        utslippskrav og transportaksene {municipality.logisticsCorridors}.
-      </p>
+      <div class="hero-split">
+        <div>
+          <nav class="breadcrumb-nav" aria-label="Brødsmulesti">
+            <a href="/">Hjem</a>
+            <span>/</span>
+            <span>{municipality.name}</span>
+          </nav>
+          <div class="eyebrow-row">
+            <span class="badge badge-amber">{municipality.county.toUpperCase()} • POSTNR. {municipality.postalRange}</span>
+            <span class="badge badge-emerald">DIM. VINTERTEMP: {municipality.designWinterTempC} °C</span>
+          </div>
+          <h1 class="hero-title">Rigg, Maskinutleie og Byggedrift i {municipality.name}</h1>
+          <p class="hero-lead">
+            Dekker byggeplasser i {municipality.keyHubs.join(", ")}. Dimensjoner riktig utstyr etter lokale grunnforhold,
+            utslippskrav og transportaksene {municipality.logisticsCorridors}.
+          </p>
 
-      <div class="hero-stats-grid">
-        <div class="stat-card-dark">
-          <span class="stat-label">Telefri dybde (referanse)</span>
-          <span class="stat-value">~{municipality.frostDepthCm} cm</span>
+          <div class="kpi-white-grid">
+            <div class="kpi-white-card">
+              <span class="kpi-white-num">~{municipality.frostDepthCm} cm</span>
+              <span class="kpi-white-label">Telefri dybde</span>
+            </div>
+            <div class="kpi-white-card">
+              <span class="kpi-white-num">{municipality.designWinterTempC} °C</span>
+              <span class="kpi-white-label">Dimensjonerende kulde</span>
+            </div>
+            <div class="kpi-white-card">
+              <span class="kpi-white-num">5 fag</span>
+              <span class="kpi-white-label">Lokale kalkulatorer</span>
+            </div>
+            <div class="kpi-white-card">
+              <span class="kpi-white-num">100 % B2B</span>
+              <span class="kpi-white-label">Brreg / EHF-sjekk</span>
+            </div>
+          </div>
         </div>
-        <div class="stat-card-dark">
-          <span class="stat-label">Dimensjonerende kulde</span>
-          <span class="stat-value">{municipality.designWinterTempC} °C</span>
-        </div>
-        <div class="stat-card-dark">
-          <span class="stat-label">Typisk maskinflytting</span>
-          <span class="stat-value">{municipality.flatbedTransferNokRange}</span>
-        </div>
-        <div class="stat-card-dark">
-          <span class="stat-label">Hovedkorridorer</span>
-          <span class="stat-value">{municipality.logisticsCorridors.split(",")[0]}</span>
+
+        <div class="hero-photo-frame">
+          <img
+            src="/images/hero-nordic-rigg.webp"
+            alt={`Rigg, beltegraver og personløfter for byggeplasser i ${municipality.name}`}
+            width="1280"
+            height="720"
+            fetchpriority="high"
+            class="hero-photo-img"
+          />
+          <div class="telemetry-hud-bar">
+            <span class="telemetry-pill">{municipality.shortName.toUpperCase()}</span>
+            <span class="telemetry-pill">FLYTTING: {municipality.flatbedTransferNokRange}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -89,15 +108,33 @@ const isStrictZeroEmission = municipality.emissionPolicyLevel === "STRENG_UTSLIP
       <div class="grid-3">
         {
           CATEGORIES.map((cat) => (
-            <a href={`/utleie/${municipality.slug}/${cat.slug}/`} class="card card-interactive">
-              <span class="badge badge-light">{cat.badgeCode}</span>
-              <h3 class="card-title">
-                {cat.shortTitle} i {municipality.shortName}
-              </h3>
-              <p class="card-text">{cat.heroTagline}</p>
-              <div class="card-meta">
-                <span>{cat.typicalTicketRangeNok}</span>
-                <span>Beregn &amp; bestill →</span>
+            <a href={`/utleie/${municipality.slug}/${cat.slug}/`} class="card-catalog">
+              <div class="card-media-wrap">
+                <img
+                  src={cat.imageSrc}
+                  alt={`${cat.shortTitle} i ${municipality.name}`}
+                  width="800"
+                  height="600"
+                  loading="lazy"
+                  class="card-media-img"
+                />
+                <span class="card-badge-overlay">{cat.badgeCode}</span>
+                <span class="card-rate-pill">Fra {cat.baseDailyRateNok.toLocaleString("nb-NO")} kr/døgn</span>
+              </div>
+              <div class="card-catalog-body">
+                <h3 class="card-title">
+                  {cat.shortTitle} i {municipality.shortName}
+                </h3>
+                <div class="spec-chip-row">
+                  {cat.telemetrySpecs.map((spec) => (
+                    <span class="spec-chip">{spec}</span>
+                  ))}
+                </div>
+                <p class="card-text">{cat.heroTagline}</p>
+                <div class="card-meta">
+                  <span>{cat.typicalTicketRangeNok}</span>
+                  <span>Beregn &amp; bestill →</span>
+                </div>
               </div>
             </a>
           ))
