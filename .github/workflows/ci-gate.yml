@@ -1,0 +1,92 @@
+name: Deterministic Security, SEO & Architecture Gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify-and-sanitize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Supply-Chain Lockfile Install (Blocks Postinstall Scripts)
+        run: npm ci --ignore-scripts
+
+      - name: Gate 1 - Strict TypeScript & Zod Contract Verification
+        run: npx tsc --noEmit
+
+      - name: Gate 2 - Gitleaks Secret Scanning
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Gate 3 - Semgrep SAST Scan
+        uses: semgrep/semgrep-action@v1
+        with:
+          config: >-
+            p/typescript
+            p/owasp-top-ten
+
+      - name: Gate 4 - Build Programmatic Static Edge Artifacts
+        run: npm run build
+
+      - name: Gate 5 - Recursive Forensic DOM, Sitemap & Header Parity Audit
+        run: |
+          if [ -n "$(find dist -name '*.map')" ]; then
+            echo "FATAL: Source maps (.map) detected in production build."
+            exit 1
+          fi
+          if grep -rn --include="*.html" "generator" dist/; then
+            echo "FATAL: Framework generator footprint leaked in HTML."
+            exit 1
+          fi
+          if grep -rn --include="*.html" 'style="' dist/; then
+            echo "FATAL: Inline style attribute detected (violates CSP style-src 'self')."
+            exit 1
+          fi
+          if [ ! -f "dist/404.html" ]; then
+            echo "FATAL: Missing hard 404 route artifact (dist/404.html)."
+            exit 1
+          fi
+          if [ ! -f "dist/sitemap.xml" ]; then
+            echo "FATAL: Missing programmatic XML sitemap (dist/sitemap.xml)."
+            exit 1
+          fi
+          html_count=0
+          while IFS= read -r -d '' html_file; do
+            html_count=$((html_count + 1))
+            if ! grep -q 'rel="canonical"' "$html_file"; then
+              echo "FATAL: Missing self-referencing canonical link in $html_file."
+              exit 1
+            fi
+            if ! grep -q '<main' "$html_file"; then
+              echo "FATAL: Missing semantic <main> landmark in $html_file."
+              exit 1
+            fi
+          done < <(find dist -name '*.html' -print0)
+          echo "Verified $html_count static HTML artifacts."
+          if [ "$html_count" -lt 65 ]; then
+            echo "FATAL: Expected >= 65 programmatic Rank-and-Rent pages, found $html_count."
+            exit 1
+          fi
+          for header_name in "Strict-Transport-Security" "X-Content-Type-Options" "X-Frame-Options" "Referrer-Policy" "Permissions-Policy" "Content-Security-Policy" "Cross-Origin-Resource-Policy"; do
+            if ! grep -q "$header_name" public/_headers; then
+              echo "FATAL: Missing $header_name in public/_headers."
+              exit 1
+            fi
+            if ! grep -q "$header_name" vercel.json; then
+              echo "FATAL: Missing $header_name in vercel.json (header parity drift)."
+              exit 1
+            fi
+          done

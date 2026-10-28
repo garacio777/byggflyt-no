@@ -1,0 +1,19 @@
+# Build & framework output
+dist/
+.astro/
+.vercel/
+.wrangler/
+
+# Dependencies
+node_modules/
+
+# Local environment secrets
+.env
+.env.*
+!.env.example
+.dev.vars
+
+# OS & logs
+.DS_Store
+Thumbs.db
+npm-debug.log*
