@@ -2,6 +2,7 @@
 import BaseLayout from "../../../layouts/BaseLayout.astro";
 import CalculatorWidget from "../../../components/CalculatorWidget.astro";
 import LeadCaptureForm from "../../../components/LeadCaptureForm.astro";
+import SkuCatalogGrid from "../../../components/SkuCatalogGrid.astro";
 import { CATEGORIES, type CategoryProfile } from "../../../data/categories.js";
 import { MUNICIPALITIES, type MunicipalityProfile } from "../../../data/municipalities.js";
 import { getTerritorySlotInfo } from "../../../lib/calculators.js";
@@ -129,6 +130,17 @@ const localFaqs = [
             </div>
           </div>
         </div>
+      </div>
+    </section>
+
+    <section class="section-block section-subtle" id="modeller">
+      <div class="container">
+        <SkuCatalogGrid
+          category={category.slug}
+          heading={`Tilgjengelige modellklasser for ${category.shortTitle.toLowerCase()} i ${municipality.name}`}
+          subheading={`Veiledende B2B-satser eks. mva og tekniske spesifikasjoner for levering i ${municipality.keyHubs.slice(0, 3).join(", ")}.`}
+          showFilterBar={true}
+        />
       </div>
     </section>
 

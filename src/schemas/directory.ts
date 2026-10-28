@@ -24,6 +24,20 @@ export const CategorySlugEnum = z.enum([
 export type MunicipalitySlug = z.infer<typeof MunicipalitySlugEnum>;
 export type CategorySlug = z.infer<typeof CategorySlugEnum>;
 
+export const DeliveryChannelEnum = z.enum([
+  "PARTNER_WEBHOOK",
+  "SLACK_WEBHOOK",
+  "EMAIL_RESEND",
+  "TERRITORY_QUEUE"
+]);
+
+export const SkuCodeSchema = z
+  .string()
+  .regex(/^SKU-[A-Z0-9-]{4,18}$/, "Ugyldig maskin-SKU format.");
+
+export type DeliveryChannel = z.infer<typeof DeliveryChannelEnum>;
+export type SkuCode = z.infer<typeof SkuCodeSchema>;
+
 /**
  * Deterministic Norwegian Modulus-11 checksum check for 9-digit organisasjonsnummer.
  */
@@ -143,6 +157,7 @@ export const LeadSubmissionRequestSchema = z
     postalCode: z.string().regex(/^[0-9]{4}$/, "Oppgi gyldig 4-sifret postnummer for byggeplass."),
     durationDays: z.number().int().min(1).max(365),
     urgency: z.enum(["AKUTT_IDAG", "IMORGEN_0700", "DENNE_UKEN", "PLANLAGT_ANBUD"]),
+    selectedSkuCode: SkuCodeSchema.optional(),
     rawNeedDescription: z
       .string()
       .trim()
@@ -156,6 +171,8 @@ export const LeadDispatchConfirmationSchema = z
   .object({
     leadReferenceId: z.string().regex(/^BF-[0-9]{6}-[A-Z0-9]{4}$/),
     status: z.enum(["ROUTED_EXCLUSIVE_PARTNER", "QUEUED_TERRITORY_DESK"]),
+    deliveryChannels: z.array(DeliveryChannelEnum).min(1).max(4),
+    selectedSkuCode: SkuCodeSchema.optional(),
     territorySlotKey: z.string().min(4).max(90),
     municipalityName: z.string().min(2).max(80),
     categoryTitle: z.string().min(2).max(90),

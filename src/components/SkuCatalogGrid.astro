@@ -1,0 +1,331 @@
+---
+import type { CategorySlug } from "../schemas/directory.js";
+import { getFeaturedSkus, getSkusByCategory } from "../data/skus.js";
+
+interface Props {
+  category?: CategorySlug;
+  heading?: string;
+  subheading?: string;
+  showFilterBar?: boolean;
+}
+
+const {
+  category,
+  heading = "Spesifiserte maskinmodeller — faste B2B-satser eks. mva",
+  subheading = "Velg konkret maskinmodell (SKU) for å overføre teknisk spesifikasjon, HMS-krav og prisramme direkte til forespørselen.",
+  showFilterBar = true
+} = Astro.props;
+
+const skus = category ? getSkusByCategory(category) : getFeaturedSkus();
+
+function formatNok(n: number): string {
+  return Math.round(n)
+    .toString()
+    .replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+}
+
+interface SpecRowItem {
+  readonly key: string;
+  readonly val: string;
+}
+
+const CATEGORY_FALLBACK_LABELS: Record<CategorySlug, string> = {
+  maskinutleie: "Anleggsmaskin & Komprimering",
+  "lift-og-stillas": "Personløfter & Tilkomst",
+  "vintervarme-og-teletining": "Teletining & Byggvarme",
+  "byggestrom-og-utslippsfri-rigg": "Byggestrøm & Brakkerigg",
+  "container-kranbil-og-masse": "Container, Kranbil & Masse"
+};
+
+const ENUM_POWER_MAP: Record<string, string> = {
+  BATTERIELEKTRISK: "100 % Elektrisk",
+  ELEKTRISK: "100 % Elektrisk",
+  ELECTRIC: "100 % Elektrisk",
+  BESS_400V: "Batteribank / 400V",
+  "400V_ELEKTRISK": "400V Elektrisk",
+  HYBRID: "Hybrid / Lavutslipp",
+  STAGE_V_HVO100: "Stage V / HVO100",
+  HVO100: "HVO100 / Stage V",
+  VAESKEBAAREN: "Væskebåren / HVO100",
+  PASSIV_RIGG: "Utslippsfri rigg"
+};
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function resolveDailyRate(skuRecord: object, weeklyRateNok: number): number {
+  if (isPlainRecord(skuRecord)) {
+    for (const key of ["dailyRateNok", "dayRateNok", "baseDailyRateNok"] as const) {
+      const candidate = skuRecord[key];
+      if (typeof candidate === "number" && Number.isFinite(candidate) && candidate > 0) {
+        return candidate;
+      }
+    }
+  }
+  return Math.max(450, Math.round(weeklyRateNok / 4.2));
+}
+
+function resolvePowerBadge(skuRecord: object, zeroEmission: boolean): string {
+  if (isPlainRecord(skuRecord)) {
+    for (const key of [
+      "powertrainLabel",
+      "powerLabel",
+      "powerBadge",
+      "drivetrainLabel",
+      "powerSourceLabel",
+      "fuelLabel",
+      "energyLabel",
+      "drivetrain",
+      "powerSource"
+    ] as const) {
+      const candidate = skuRecord[key];
+      if (typeof candidate === "string" && candidate.trim().length > 0) {
+        const trimmed = candidate.trim();
+        const mapped = ENUM_POWER_MAP[trimmed];
+        if (mapped) {
+          return mapped;
+        }
+        if (!/^[A-Z0-9_]+$/.test(trimmed)) {
+          return trimmed;
+        }
+      }
+    }
+  }
+  return zeroEmission ? "100 % Elektrisk" : "Stage V / HVO100";
+}
+
+function resolveClassLabel(
+  skuRecord: object,
+  catSlug: CategorySlug,
+  capacityTier: string
+): string {
+  if (isPlainRecord(skuRecord)) {
+    for (const key of [
+      "classLabel",
+      "machineClass",
+      "equipmentClass",
+      "subCategory",
+      "categoryLabel",
+      "shortClass"
+    ] as const) {
+      const candidate = skuRecord[key];
+      if (typeof candidate === "string" && candidate.trim().length > 0) {
+        return candidate.trim();
+      }
+    }
+  }
+  return `${CATEGORY_FALLBACK_LABELS[catSlug]} • ${capacityTier}`;
+}
+
+function extractSpecRows(
+  skuRecord: object,
+  skuCode: string,
+  capacityTier: string,
+  powerBadge: string,
+  certBadge: string
+): readonly SpecRowItem[] {
+  if (isPlainRecord(skuRecord)) {
+    for (const fieldName of [
+      "specs",
+      "specRows",
+      "technicalSpecs",
+      "keySpecs",
+      "keyMetrics"
+    ] as const) {
+      const rawSpecs = skuRecord[fieldName];
+      if (Array.isArray(rawSpecs)) {
+        const rows: SpecRowItem[] = [];
+        for (const entry of rawSpecs) {
+          if (
+            Array.isArray(entry) &&
+            typeof entry[0] === "string" &&
+            typeof entry[1] === "string"
+          ) {
+            rows.push({ key: entry[0], val: entry[1] });
+          } else if (isPlainRecord(entry)) {
+            const k =
+              typeof entry.label === "string"
+                ? entry.label
+                : typeof entry.key === "string"
+                  ? entry.key
+                  : typeof entry.name === "string"
+                    ? entry.name
+                    : "";
+            const v =
+              typeof entry.value === "string"
+                ? entry.value
+                : typeof entry.val === "string"
+                  ? entry.val
+                  : typeof entry.value === "number"
+                    ? String(entry.value)
+                    : "";
+            if (k.length > 0 && v.length > 0) {
+              rows.push({ key: k, val: v });
+            }
+          }
+        }
+        if (rows.length > 0) {
+          return rows.slice(0, 4);
+        }
+      } else if (isPlainRecord(rawSpecs)) {
+        const rows: SpecRowItem[] = [];
+        for (const [k, v] of Object.entries(rawSpecs)) {
+          if (typeof v === "string" || typeof v === "number") {
+            rows.push({ key: k, val: String(v) });
+          }
+        }
+        if (rows.length > 0) {
+          return rows.slice(0, 4);
+        }
+      }
+    }
+  }
+
+  return [
+    { key: "SKU-kode", val: skuCode },
+    { key: "Kapasitetsklasse", val: capacityTier },
+    { key: "Drivlinje", val: powerBadge },
+    { key: "Sertifisering", val: certBadge }
+  ];
+}
+---
+
+<div class="sku-section-shell" data-sku-grid-root>
+  <div class="sku-toolbar">
+    <div class="section-header">
+      <h2 class="section-title">{heading}</h2>
+      {subheading && <p class="section-desc">{subheading}</p>}
+    </div>
+
+    {
+      showFilterBar !== false && (
+        <div class="sku-filter-bar" role="group" aria-label="Filtrer maskinmodeller">
+          <button type="button" class="sku-filter-btn" aria-pressed="true" data-sku-filter="ALL">
+            Alle modeller
+          </button>
+          <button
+            type="button"
+            class="sku-filter-btn"
+            aria-pressed="false"
+            data-sku-filter="ZERO_EMISSION"
+          >
+            Utslippsfri / Elektrisk
+          </button>
+          <button type="button" class="sku-filter-btn" aria-pressed="false" data-sku-filter="TUNG">
+            Tung / Høykapasitet
+          </button>
+        </div>
+      )
+    }
+  </div>
+
+  <div class="sku-grid">
+    {
+      skus.map((sku) => {
+        const dailyRate = resolveDailyRate(sku, sku.weeklyRateNok);
+        const powerBadge = resolvePowerBadge(sku, sku.zeroEmission);
+        const classLabel = resolveClassLabel(sku, sku.categorySlug, sku.capacityTier);
+        const specRows = extractSpecRows(
+          sku,
+          sku.skuCode,
+          sku.capacityTier,
+          powerBadge,
+          sku.certificationBadge
+        );
+
+        return (
+          <article
+            class="sku-card"
+            data-sku-card
+            data-sku-code={sku.skuCode}
+            data-sku-zero={sku.zeroEmission ? "true" : "false"}
+            data-zero-emission={sku.zeroEmission ? "true" : "false"}
+            data-sku-tier={sku.capacityTier}
+            itemscope
+            itemtype="https://schema.org/Product"
+          >
+            <div class="sku-card-media">
+              <img
+                src={sku.imageSrc}
+                alt={sku.imageAlt}
+                width="800"
+                height="600"
+                loading="lazy"
+                class="sku-card-img"
+                itemprop="image"
+              />
+              <span class="sku-code-pill" itemprop="sku">
+                {sku.skuCode}
+              </span>
+              <span class={`sku-power-pill ${sku.zeroEmission ? "sku-power-zero" : "sku-power-std"}`}>
+                {powerBadge}
+              </span>
+            </div>
+
+            <div class="sku-card-body">
+              <span class="sku-class-label" itemprop="category">
+                {classLabel}
+              </span>
+              <h3 class="sku-card-title" itemprop="name">
+                {sku.name}
+              </h3>
+
+              <div
+                class="sku-rate-strip"
+                itemprop="offers"
+                itemscope
+                itemtype="https://schema.org/Offer"
+              >
+                <meta itemprop="priceCurrency" content="NOK" />
+                <meta itemprop="price" content={String(dailyRate)} />
+                <link itemprop="availability" href="https://schema.org/InStock" />
+                <div class="sku-rate-cell">
+                  <span class="sku-rate-period">Døgn</span>
+                  <span class="sku-rate-val">{formatNok(dailyRate)} kr</span>
+                </div>
+                <div class="sku-rate-cell">
+                  <span class="sku-rate-period">Uke</span>
+                  <span class="sku-rate-val">{formatNok(sku.weeklyRateNok)} kr</span>
+                </div>
+                <div class="sku-rate-cell">
+                  <span class="sku-rate-period">Måned</span>
+                  <span class="sku-rate-val">{formatNok(sku.monthlyRateNok)} kr</span>
+                </div>
+              </div>
+
+              <ul class="sku-spec-table">
+                {specRows.map((row) => (
+                  <li class="sku-spec-row">
+                    <span class="sku-spec-key">{row.key}</span>
+                    <span class="sku-spec-val">{row.val}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <div class="sku-cert-line">✓ {sku.certificationBadge}</div>
+
+              <button
+                type="button"
+                class="btn btn-primary btn-sm sku-select-btn"
+                data-select-sku={sku.skuCode}
+                data-sku-cat={sku.categorySlug}
+                data-sku-name={sku.name}
+                data-sku-min-nok={String(sku.weeklyRateNok)}
+                data-sku-max-nok={String(sku.monthlyRateNok)}
+                data-sku-cert={sku.certificationBadge}
+                data-sku-prefill={sku.prefilledOrderLine}
+              >
+                Velg modell &amp; be om levering ↓
+              </button>
+            </div>
+          </article>
+        );
+      })
+    }
+  </div>
+
+  <div class="status-banner status-warn" data-sku-empty hidden>
+    Ingen maskinmodeller matcher valgt filter i denne visningen.
+  </div>
+</div>

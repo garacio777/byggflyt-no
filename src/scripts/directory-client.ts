@@ -9,6 +9,7 @@ import {
 import {
   CategorySlugEnum,
   LeadDispatchConfirmationSchema,
+  SkuCodeSchema,
   VerifiedOrgResponseSchema,
   type CalculatorSnapshot,
   type CategorySlug
@@ -16,6 +17,7 @@ import {
 
 let latestCalcSnapshot: CalculatorSnapshot | undefined;
 let latestPrefilledText = "";
+let activeSelectedSkuCode: string | undefined;
 
 function readNumberInput(root: ParentNode, selector: string, fallback: number): number {
   const el = root.querySelector<HTMLInputElement>(selector);
@@ -142,6 +144,96 @@ function renderCalculatorOutput(widget: HTMLElement, output: UnifiedCalcOutput):
     complianceSummary: output.complianceSummary.slice(0, 260)
   };
   latestPrefilledText = output.prefilledOrderText;
+}
+
+function initSkuCatalogGrids(): void {
+  const roots = document.querySelectorAll<HTMLElement>("[data-sku-grid-root]");
+  for (const root of roots) {
+    const filterButtons = root.querySelectorAll<HTMLElement>("[data-sku-filter]");
+    const cards = root.querySelectorAll<HTMLElement>("[data-sku-card]");
+    const emptyBox = root.querySelector<HTMLElement>("[data-sku-empty]");
+
+    for (const filterBtn of filterButtons) {
+      filterBtn.addEventListener("click", () => {
+        const filterMode = filterBtn.getAttribute("data-sku-filter") ?? "ALL";
+
+        for (const btn of filterButtons) {
+          btn.setAttribute("aria-pressed", btn === filterBtn ? "true" : "false");
+        }
+
+        let visibleCount = 0;
+        for (const card of cards) {
+          let matches = true;
+          if (filterMode === "ZERO_EMISSION") {
+            matches = card.getAttribute("data-zero-emission") === "true";
+          } else if (filterMode === "TUNG") {
+            matches = card.getAttribute("data-sku-tier") === "HEAVY";
+          }
+          card.hidden = !matches;
+          if (matches) {
+            visibleCount += 1;
+          }
+        }
+
+        if (emptyBox) {
+          emptyBox.hidden = visibleCount > 0;
+        }
+      });
+    }
+
+    const selectButtons = root.querySelectorAll<HTMLElement>("[data-select-sku]");
+    for (const selectBtn of selectButtons) {
+      selectBtn.addEventListener("click", () => {
+        const skuCode = selectBtn.getAttribute("data-select-sku") ?? "";
+        const skuCat = selectBtn.getAttribute("data-sku-cat") ?? "";
+        const skuName = selectBtn.getAttribute("data-sku-name") ?? "";
+        const rawMinNok = Number(selectBtn.getAttribute("data-sku-min-nok"));
+        const rawMaxNok = Number(selectBtn.getAttribute("data-sku-max-nok"));
+        const minNok = Number.isFinite(rawMinNok) ? rawMinNok : 1000;
+        const maxNok = Number.isFinite(rawMaxNok) ? rawMaxNok : 1500;
+        const skuCert = selectBtn.getAttribute("data-sku-cert") ?? "";
+        const skuPrefill = selectBtn.getAttribute("data-sku-prefill") ?? "";
+
+        const parsedSku = SkuCodeSchema.safeParse(skuCode);
+        if (parsedSku.success) {
+          activeSelectedSkuCode = parsedSku.data;
+        }
+
+        const parsedCat = CategorySlugEnum.safeParse(skuCat);
+        if (parsedCat.success) {
+          const catSelect = document.querySelector<HTMLSelectElement>("[data-lead-category]");
+          if (catSelect) {
+            catSelect.value = parsedCat.data;
+          }
+
+          latestCalcSnapshot = {
+            calculatorType: parsedCat.data,
+            headlineSpec: `[${skuCode}] ${skuName}`.slice(0, 220),
+            estimatedValueNokMin: Math.max(1000, Math.round(minNok)),
+            estimatedValueNokMax: Math.max(1500, Math.round(maxNok)),
+            complianceSummary: (skuCert || "Verifisert B2B-maskinklasse").slice(0, 260)
+          };
+        }
+
+        latestPrefilledText = `[${skuCode}] ${skuPrefill}`;
+        const descEl = document.querySelector<HTMLTextAreaElement>("[data-lead-desc]");
+        if (descEl) {
+          descEl.value = latestPrefilledText;
+        }
+
+        const banner = document.querySelector<HTMLElement>("[data-selected-sku-banner]");
+        if (banner) {
+          banner.hidden = false;
+          banner.textContent = `Valgt maskinmodell: [${skuCode}] ${skuName} — teknisk spesifikasjon og prisestimat er lagt inn i forespørselen.`;
+        }
+
+        const formShell = document.querySelector<HTMLElement>("[data-lead-form-shell]");
+        if (formShell) {
+          formShell.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      });
+    }
+  }
 }
 
 function initCalculatorWidgets(): void {
@@ -307,6 +399,7 @@ function initLeadForms(): void {
       postalCode: postalInput?.value ?? "1430",
       durationDays: Number(daysInput?.value ?? "5"),
       urgency: urgencySelect?.value ?? "IMORGEN_0700",
+      ...(activeSelectedSkuCode ? { selectedSkuCode: activeSelectedSkuCode } : {}),
       rawNeedDescription: descInput?.value ?? "",
       ...(latestCalcSnapshot ? { calculatorSnapshot: latestCalcSnapshot } : {})
     };
@@ -354,6 +447,11 @@ function initLeadForms(): void {
       detail.className = "card-text";
       detail.textContent = `Område: ${conf.municipalityName} (${conf.categoryTitle}) • Forventet responstid: innen ${conf.responseSlaMinutes} min • ${conf.localLogisticsNote}`;
 
+      const routingInfo = document.createElement("p");
+      routingInfo.className = "card-text";
+      const skuSummary = conf.selectedSkuCode ? ` • Valgt modellkode: ${conf.selectedSkuCode}` : "";
+      routingInfo.textContent = `Aktive rutingskanaler: ${conf.deliveryChannels.join(", ")}${skuSummary}`;
+
       const list = document.createElement("ul");
       list.className = "spec-list";
       for (const item of conf.complianceChecklist) {
@@ -362,7 +460,7 @@ function initLeadForms(): void {
         list.appendChild(li);
       }
 
-      feedbackBox.append(heading, detail, list);
+      feedbackBox.append(heading, detail, routingInfo, list);
     } catch {
       feedbackBox.className = "status-banner status-err";
       feedbackBox.textContent = "Kunne ikke koble til innsendingstjenesten.";
@@ -387,5 +485,6 @@ function initQuickRouteFinder(): void {
 }
 
 initQuickRouteFinder();
+initSkuCatalogGrids();
 initCalculatorWidgets();
 initLeadForms();

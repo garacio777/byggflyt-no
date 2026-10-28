@@ -2,6 +2,7 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 import CalculatorWidget from "../components/CalculatorWidget.astro";
 import LeadCaptureForm from "../components/LeadCaptureForm.astro";
+import SkuCatalogGrid from "../components/SkuCatalogGrid.astro";
 import { CATEGORIES } from "../data/categories.js";
 import { MUNICIPALITIES } from "../data/municipalities.js";
 ---
@@ -153,7 +154,17 @@ import { MUNICIPALITIES } from "../data/municipalities.js";
     </div>
   </section>
 
-  <section class="section-block" id="kalkulator">
+  <section class="section-block" id="modeller">
+    <div class="container">
+      <SkuCatalogGrid
+        heading="Utvalgte maskin- og riggmodeller — spesifikasjoner og veiledende satser"
+        subheading="Sammenlign døgnsats, ukespris og tekniske nøkkeldata (DOZR / United Rentals-standard) eller filtrer på utslippsfri drift."
+        showFilterBar={true}
+      />
+    </div>
+  </section>
+
+  <section class="section-block section-subtle" id="kalkulator">
     <div class="container">
       <div class="section-header">
         <h2 class="section-title">06:45 Brakkerigg-kalkulator — regn ut riktig spesifikasjon før bestilling</h2>
@@ -165,7 +176,7 @@ import { MUNICIPALITIES } from "../data/municipalities.js";
     </div>
   </section>
 
-  <section class="section-block section-subtle" id="omrader">
+  <section class="section-block" id="omrader">
     <div class="container">
       <div class="section-header">
         <h2 class="section-title">Velg region på Østlandet — lokale grunnforhold, teledybde og miljøkrav</h2>
@@ -202,13 +213,13 @@ import { MUNICIPALITIES } from "../data/municipalities.js";
     </div>
   </section>
 
-  <section class="section-block">
+  <section class="section-block section-subtle">
     <div class="container">
       <LeadCaptureForm />
     </div>
   </section>
 
-  <section class="section-block section-subtle">
+  <section class="section-block">
     <div class="container">
       <div class="partner-callout">
         <div>

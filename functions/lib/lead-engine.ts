@@ -3,16 +3,23 @@ import { getMunicipalityBySlug } from "../../src/data/municipalities.js";
 import { getTerritorySlotInfo } from "../../src/lib/calculators.js";
 import {
   BrregExternalEnhetSchema,
+  type DeliveryChannel,
   LeadDispatchConfirmationSchema,
+  type LeadSubmissionRequest,
   LeadSubmissionRequestSchema,
   OrgLookupQuerySchema,
   PartnerInquiryConfirmationSchema,
+  type PartnerInquiryRequest,
   PartnerInquiryRequestSchema,
   VerifiedOrgResponseSchema
 } from "../../src/schemas/directory.js";
 
 export interface LeadEngineEnv {
   readonly PARTNER_WEBHOOK_URL?: string;
+  readonly SLACK_WEBHOOK_URL?: string;
+  readonly RESEND_API_KEY?: string;
+  readonly LEAD_NOTIFY_EMAIL?: string;
+  readonly LEAD_FROM_EMAIL?: string;
 }
 
 export const SHARED_API_HEADERS: Record<string, string> = {
@@ -35,6 +42,285 @@ function createDeterministicRef(prefix: "BF" | "PARTNER", seedInput: string): st
   }
   const suffix = (hash >>> 0).toString(36).toUpperCase().padStart(4, "0").slice(0, 4);
   return `${prefix}-${yy}${mm}${dd}-${suffix}`;
+}
+
+async function postJsonBounded(
+  url: string,
+  payload: unknown,
+  extraHeaders?: Record<string, string>,
+  timeoutMs = 3500
+): Promise<boolean> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(extraHeaders ?? {})
+      },
+      body: JSON.stringify(payload),
+      signal: controller.signal
+    });
+    return res.ok;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function dispatchOutboundLeadNotifications(params: {
+  readonly env: LeadEngineEnv;
+  readonly leadReferenceId: string;
+  readonly territorySlotKey: string;
+  readonly municipalityName: string;
+  readonly municipalityShortName: string;
+  readonly categoryShortTitle: string;
+  readonly data: LeadSubmissionRequest;
+  readonly recommendedSpecSummary: string;
+  readonly estimatedContractNokMin: number;
+  readonly estimatedContractNokMax: number;
+  readonly responseSlaMinutes: number;
+}): Promise<DeliveryChannel[]> {
+  const {
+    env,
+    leadReferenceId,
+    territorySlotKey,
+    municipalityName,
+    municipalityShortName,
+    categoryShortTitle,
+    data,
+    recommendedSpecSummary,
+    estimatedContractNokMin,
+    estimatedContractNokMax,
+    responseSlaMinutes
+  } = params;
+
+  const tasks: Array<Promise<DeliveryChannel | null>> = [];
+
+  if (env.PARTNER_WEBHOOK_URL && env.PARTNER_WEBHOOK_URL.startsWith("https://")) {
+    const partnerUrl = env.PARTNER_WEBHOOK_URL;
+    tasks.push(
+      postJsonBounded(partnerUrl, {
+        type: "BYGGFLYT_B2B_LEAD",
+        leadReferenceId,
+        territorySlotKey,
+        selectedSkuCode: data.selectedSkuCode,
+        request: data,
+        recommendedSpecSummary,
+        estimatedContractNokMin,
+        estimatedContractNokMax,
+        responseSlaMinutes
+      }).then((ok) => (ok ? "PARTNER_WEBHOOK" : null))
+    );
+  }
+
+  if (env.SLACK_WEBHOOK_URL && env.SLACK_WEBHOOK_URL.startsWith("https://")) {
+    const slackUrl = env.SLACK_WEBHOOK_URL;
+    const nokRange = `${estimatedContractNokMin.toLocaleString("nb-NO")}–${estimatedContractNokMax.toLocaleString("nb-NO")} kr eks. mva`;
+    const skuLabel = data.selectedSkuCode ?? "Kalkulator-spesifisert";
+    tasks.push(
+      postJsonBounded(slackUrl, {
+        text: `[ByggFlyt ${leadReferenceId}] Ny B2B-forespørsel: ${categoryShortTitle} i ${municipalityShortName} (${data.companyName})`,
+        blocks: [
+          {
+            type: "header",
+            text: {
+              type: "plain_text",
+              text: `ByggFlyt B2B-forespørsel • ${leadReferenceId}`
+            }
+          },
+          {
+            type: "section",
+            fields: [
+              {
+                type: "mrkdwn",
+                text: `*Bedrift (Org.nr):*\n${data.companyName} (${data.orgNr})`
+              },
+              {
+                type: "mrkdwn",
+                text: `*Kontakt & Tlf:*\n${data.contactName} (${data.phone})`
+              },
+              {
+                type: "mrkdwn",
+                text: `*Område & Postnr:*\n${municipalityName} (${data.postalCode})`
+              },
+              {
+                type: "mrkdwn",
+                text: `*Modell / SKU:*\n${skuLabel}`
+              },
+              {
+                type: "mrkdwn",
+                text: `*Estimert ramme:*\n${nokRange}`
+              },
+              {
+                type: "mrkdwn",
+                text: `*Frist / SLA:*\n${data.urgency} (${responseSlaMinutes} min SLA)`
+              }
+            ]
+          },
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: `*Spesifikasjon:* ${recommendedSpecSummary}\n*Melding:* ${data.rawNeedDescription}`
+            }
+          }
+        ]
+      }).then((ok) => (ok ? "SLACK_WEBHOOK" : null))
+    );
+  }
+
+  if (env.RESEND_API_KEY && env.LEAD_NOTIFY_EMAIL) {
+    const cleanCompany = data.companyName.replace(/[\r\n]+/g, " ").trim();
+    const fromAddr = env.LEAD_FROM_EMAIL ?? "ByggFlyt Dispatch <onboarding@resend.dev>";
+    const toAddr = env.LEAD_NOTIFY_EMAIL;
+    const emailLines = [
+      `Referanse: ${leadReferenceId}`,
+      `Territorium: ${territorySlotKey} (${municipalityName} / ${categoryShortTitle})`,
+      `Bedrift: ${cleanCompany} (Org.nr: ${data.orgNr})`,
+      `Kontaktperson: ${data.contactName} • Tlf: ${data.phone}`,
+      `Postnummer: ${data.postalCode} • Varighet: ${data.durationDays} dager • Frist: ${data.urgency} (SLA ${responseSlaMinutes} min)`,
+      `Valgt SKU: ${data.selectedSkuCode ?? "Ikke valgt (kalkulator/fritekst)"}`,
+      `Anbefalt spesifikasjon: ${recommendedSpecSummary}`,
+      `Estimert kontraktsramme: ${estimatedContractNokMin.toLocaleString("nb-NO")}–${estimatedContractNokMax.toLocaleString("nb-NO")} kr eks. mva`,
+      "",
+      "Melding fra anleggsleder:",
+      data.rawNeedDescription
+    ];
+    tasks.push(
+      postJsonBounded(
+        "https://api.resend.com/emails",
+        {
+          from: fromAddr,
+          to: [toAddr],
+          subject: `[ByggFlyt ${leadReferenceId}] Ny B2B-forespørsel: ${categoryShortTitle} i ${municipalityShortName} (${cleanCompany})`.slice(
+            0,
+            180
+          ),
+          text: emailLines.join("\n")
+        },
+        {
+          Authorization: `Bearer ${env.RESEND_API_KEY}`
+        }
+      ).then((ok) => (ok ? "EMAIL_RESEND" : null))
+    );
+  }
+
+  if (tasks.length === 0) {
+    return [];
+  }
+
+  const settled = await Promise.allSettled(tasks);
+  const delivered: DeliveryChannel[] = [];
+  for (const res of settled) {
+    if (res.status === "fulfilled" && res.value !== null) {
+      delivered.push(res.value);
+    }
+  }
+  return delivered;
+}
+
+async function dispatchOutboundPartnerNotifications(params: {
+  readonly env: LeadEngineEnv;
+  readonly applicationId: string;
+  readonly municipalityName: string;
+  readonly categoryShortTitle: string;
+  readonly slotKey: string;
+  readonly monthlyLeaseNok: number;
+  readonly data: PartnerInquiryRequest;
+}): Promise<void> {
+  const { env, applicationId, municipalityName, categoryShortTitle, slotKey, monthlyLeaseNok, data } = params;
+  const tasks: Array<Promise<boolean>> = [];
+
+  if (env.PARTNER_WEBHOOK_URL && env.PARTNER_WEBHOOK_URL.startsWith("https://")) {
+    tasks.push(
+      postJsonBounded(env.PARTNER_WEBHOOK_URL, {
+        type: "TERRITORY_LEASE_INQUIRY",
+        applicationId,
+        slotKey,
+        monthlyLeaseNok,
+        applicant: data
+      })
+    );
+  }
+
+  if (env.SLACK_WEBHOOK_URL && env.SLACK_WEBHOOK_URL.startsWith("https://")) {
+    tasks.push(
+      postJsonBounded(env.SLACK_WEBHOOK_URL, {
+        text: `[ByggFlyt ${applicationId}] Ny partnersøknad for ${slotKey} (${data.companyName})`,
+        blocks: [
+          {
+            type: "header",
+            text: {
+              type: "plain_text",
+              text: `Ny Rank & Rent Partnersøknad • ${applicationId}`
+            }
+          },
+          {
+            type: "section",
+            fields: [
+              {
+                type: "mrkdwn",
+                text: `*Søker:*\n${data.companyName} (${data.orgNr})`
+              },
+              {
+                type: "mrkdwn",
+                text: `*Kontakt:*\n${data.contactName} (${data.phone} / ${data.email})`
+              },
+              {
+                type: "mrkdwn",
+                text: `*Territorium:*\n${categoryShortTitle} i ${municipalityName}`
+              },
+              {
+                type: "mrkdwn",
+                text: `*Veil. månedsleie:*\n${monthlyLeaseNok.toLocaleString("nb-NO")} kr/mnd eks. mva`
+              }
+            ]
+          },
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: `*Depot:* ${data.depotLocation}\n*Maskinpark:* ${data.fleetSummary}`
+            }
+          }
+        ]
+      })
+    );
+  }
+
+  if (env.RESEND_API_KEY && env.LEAD_NOTIFY_EMAIL) {
+    const fromAddr = env.LEAD_FROM_EMAIL ?? "ByggFlyt Dispatch <onboarding@resend.dev>";
+    tasks.push(
+      postJsonBounded(
+        "https://api.resend.com/emails",
+        {
+          from: fromAddr,
+          to: [env.LEAD_NOTIFY_EMAIL],
+          subject: `[ByggFlyt ${applicationId}] Partnersøknad: ${categoryShortTitle} i ${municipalityName}`,
+          text: [
+            `Søknads-ID: ${applicationId}`,
+            `Territorium: ${slotKey} (${monthlyLeaseNok.toLocaleString("nb-NO")} kr/mnd eks. mva)`,
+            `Bedrift: ${data.companyName} (${data.orgNr})`,
+            `Kontakt: ${data.contactName} • ${data.email} • ${data.phone}`,
+            `Depotadresse: ${data.depotLocation}`,
+            "",
+            "Maskinpark / kapasitet:",
+            data.fleetSummary
+          ].join("\n")
+        },
+        {
+          Authorization: `Bearer ${env.RESEND_API_KEY}`
+        }
+      )
+    );
+  }
+
+  if (tasks.length > 0) {
+    await Promise.allSettled(tasks);
+  }
 }
 
 export async function handleOrgVerification(requestUrl: string): Promise<Response> {
@@ -190,10 +476,14 @@ export async function handleLeadSubmission(
   const estimatedContractNokMin = data.calculatorSnapshot?.estimatedValueNokMin ?? fallbackMin;
   const estimatedContractNokMax = data.calculatorSnapshot?.estimatedValueNokMax ?? fallbackMax;
 
-  const recommendedSpecSummary = (
+  const baseSpecSummary =
     data.calculatorSnapshot?.headlineSpec ??
-    `${category.shortTitle} (${data.durationDays} dager) til postnr. ${data.postalCode} i ${municipality.shortName}`
-  ).slice(0, 260);
+    `${category.shortTitle} (${data.durationDays} dager) til postnr. ${data.postalCode} i ${municipality.shortName}`;
+  const skuPrefix =
+    data.selectedSkuCode && !baseSpecSummary.includes(data.selectedSkuCode)
+      ? `[${data.selectedSkuCode}] `
+      : "";
+  const recommendedSpecSummary = `${skuPrefix}${baseSpecSummary}`.slice(0, 260);
 
   const slaMap = {
     AKUTT_IDAG: 15,
@@ -202,38 +492,33 @@ export async function handleLeadSubmission(
     PLANLAGT_ANBUD: 180
   } as const;
 
-  let routingStatus: "ROUTED_EXCLUSIVE_PARTNER" | "QUEUED_TERRITORY_DESK" = "QUEUED_TERRITORY_DESK";
+  const responseSlaMinutes = slaMap[data.urgency];
   const leadReferenceId = createDeterministicRef("BF", `${data.orgNr}:${slotInfo.slotKey}`);
 
-  if (env.PARTNER_WEBHOOK_URL && env.PARTNER_WEBHOOK_URL.startsWith("https://")) {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 3500);
-    try {
-      const hookRes = await fetch(env.PARTNER_WEBHOOK_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          leadReferenceId,
-          territorySlotKey: slotInfo.slotKey,
-          request: data,
-          estimatedContractNokMin,
-          estimatedContractNokMax
-        }),
-        signal: controller.signal
-      });
-      if (hookRes.ok) {
-        routingStatus = "ROUTED_EXCLUSIVE_PARTNER";
-      }
-    } catch {
-      routingStatus = "QUEUED_TERRITORY_DESK";
-    } finally {
-      clearTimeout(timer);
-    }
-  }
+  const deliveredChannels = await dispatchOutboundLeadNotifications({
+    env,
+    leadReferenceId,
+    territorySlotKey: slotInfo.slotKey,
+    municipalityName: municipality.name,
+    municipalityShortName: municipality.shortName,
+    categoryShortTitle: category.shortTitle,
+    data,
+    recommendedSpecSummary,
+    estimatedContractNokMin,
+    estimatedContractNokMax,
+    responseSlaMinutes
+  });
+
+  const routingStatus: "ROUTED_EXCLUSIVE_PARTNER" | "QUEUED_TERRITORY_DESK" =
+    deliveredChannels.length > 0 ? "ROUTED_EXCLUSIVE_PARTNER" : "QUEUED_TERRITORY_DESK";
+  const deliveryChannels: DeliveryChannel[] =
+    deliveredChannels.length > 0 ? deliveredChannels : ["TERRITORY_QUEUE"];
 
   const confirmationCandidate = {
     leadReferenceId,
     status: routingStatus,
+    deliveryChannels,
+    ...(data.selectedSkuCode ? { selectedSkuCode: data.selectedSkuCode } : {}),
     territorySlotKey: slotInfo.slotKey,
     municipalityName: municipality.name,
     categoryTitle: category.shortTitle,
@@ -246,7 +531,7 @@ export async function handleLeadSubmission(
       0,
       240
     ),
-    responseSlaMinutes: slaMap[data.urgency]
+    responseSlaMinutes
   };
 
   const validatedOutput = LeadDispatchConfirmationSchema.safeParse(confirmationCandidate);
@@ -294,27 +579,15 @@ export async function handlePartnerInquiry(
   const slotInfo = getTerritorySlotInfo(data.desiredMunicipality, data.desiredCategory);
   const applicationId = createDeterministicRef("PARTNER", `${data.orgNr}:${slotInfo.slotKey}`);
 
-  if (env.PARTNER_WEBHOOK_URL && env.PARTNER_WEBHOOK_URL.startsWith("https://")) {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 3500);
-    try {
-      await fetch(env.PARTNER_WEBHOOK_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type: "TERRITORY_LEASE_INQUIRY",
-          applicationId,
-          slotInfo,
-          applicant: data
-        }),
-        signal: controller.signal
-      });
-    } catch {
-      // Non-fatal webhook notification failure
-    } finally {
-      clearTimeout(timer);
-    }
-  }
+  await dispatchOutboundPartnerNotifications({
+    env,
+    applicationId,
+    municipalityName: municipality.name,
+    categoryShortTitle: category.shortTitle,
+    slotKey: slotInfo.slotKey,
+    monthlyLeaseNok: slotInfo.monthlyLeaseNok,
+    data
+  });
 
   const outCandidate = {
     applicationId,
