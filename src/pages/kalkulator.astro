@@ -1,0 +1,39 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import CalculatorWidget from "../components/CalculatorWidget.astro";
+import LeadCaptureForm from "../components/LeadCaptureForm.astro";
+---
+
+<BaseLayout
+  title="06:45 Brakkerigg-Kalkulatorer — Maskin, Lift, Byggvarme, BESS & TEK17 | ByggFlyt"
+  description="Gratis norske anleggskalkulatorer for anleggsledere og formenn: beregn gravemaskinklasse, lift marktrykk, teletining kW, 63A byggestrøm/batteribank og TEK17 avfall/pukk."
+  canonicalPath="/kalkulator/"
+>
+  <section class="hero-section">
+    <div class="container">
+      <div class="eyebrow-row">
+        <span class="badge badge-amber">06:45 FELTVERKTØY FOR ANLEGGSLEDERE</span>
+        <span class="badge badge-emerald">INGEN INNLOGGING • 100 % DETERMINISTISK</span>
+      </div>
+      <h1 class="hero-title">06:45 Brakkerigg-Verktøykasse</h1>
+      <p class="hero-lead">
+        Lagre denne siden på mobilen: beregn grøft &amp; vibroplate, lift &amp; marktrykk, teletining i kW,
+        byggestrøm/batteribank (BESS) og fastmasse → løsmasse før du bestiller transport.
+      </p>
+    </div>
+  </section>
+
+  <section class="section-block">
+    <div class="container">
+      <CalculatorWidget showAllTabs={true} initialCategory="vintervarme-og-teletining" />
+    </div>
+  </section>
+
+  <section class="section-block section-subtle">
+    <div class="container">
+      <LeadCaptureForm headingText="Overfør beregningen til én lokal B2B-leverandør" />
+    </div>
+  </section>
+
+  <script src="../scripts/directory-client.ts"></script>
+</BaseLayout>

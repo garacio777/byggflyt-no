@@ -1,0 +1,124 @@
+---
+import "../styles/global.css";
+import { CATEGORIES } from "../data/categories.js";
+import { MUNICIPALITIES } from "../data/municipalities.js";
+
+interface Props {
+  title: string;
+  description: string;
+  canonicalPath: string;
+}
+
+const { title, description, canonicalPath } = Astro.props;
+const siteOrigin = "https://byggflyt-no.vercel.app";
+const normalizedPath = canonicalPath === "/" ? "/" : `${canonicalPath.replace(/\/+$/, "")}/`;
+const canonicalUrl = `${siteOrigin}${normalizedPath}`;
+---
+
+<!doctype html>
+<html lang="nb">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalUrl} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="nb_NO" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl} />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container header-inner">
+        <a href="/" class="brand-link">
+          <span class="brand-mark" aria-hidden="true">BF</span>
+          <span>
+            ByggFlyt.no
+            <span class="brand-sub">B2B Rigg-, Maskin- &amp; Anleggsportal Østlandet</span>
+          </span>
+        </a>
+        <nav class="main-nav" aria-label="Hovedmeny">
+          <a href="/" class="nav-link">Katalog</a>
+          <a href="/kalkulator/" class="nav-link">06:45 Kalkulatorer</a>
+          <a href="/#omrader" class="nav-link">Områder (10)</a>
+          <a href="/#kategorier" class="nav-link">Fagområder (5)</a>
+          <a href="/bli-partner/" class="nav-link nav-cta">Lei Territorium (Partner)</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main-content">
+      <slot />
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <div class="footer-grid">
+          <div>
+            <h2 class="footer-heading">ByggFlyt B2B-Portalen</h2>
+            <p>
+              Ferdig dimensjonerte forespørsler for bygge- og anleggsbransjen på Østlandet.
+              Verifisert mot Enhetsregisteret (Modulus-11 / EHF) — 1 eksklusiv lokal leverandør per fag og område, null anbudsspam.
+            </p>
+            <p>
+              <a href="/kalkulator/">Åpne 06:45 Brakkerigg-kalkulator →</a>
+            </p>
+          </div>
+
+          <div>
+            <h2 class="footer-heading">Fagområder &amp; Verktøy</h2>
+            <ul class="footer-links">
+              {
+                CATEGORIES.map((cat) => (
+                  <li>
+                    <a href={`/kategorier/${cat.slug}/`}>{cat.shortTitle}</a>
+                  </li>
+                ))
+              }
+              <li>
+                <a href="/bli-partner/">Lei eksklusivt territorium (Rank &amp; Rent)</a>
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h2 class="footer-heading">Regioner på Østlandet</h2>
+            <ul class="footer-links">
+              {
+                MUNICIPALITIES.slice(0, 5).map((mun) => (
+                  <li>
+                    <a href={`/omrader/${mun.slug}/`}>{mun.name}</a>
+                  </li>
+                ))
+              }
+            </ul>
+          </div>
+
+          <div>
+            <h2 class="footer-heading">Flere Knute- &amp; Industriområder</h2>
+            <ul class="footer-links">
+              {
+                MUNICIPALITIES.slice(5).map((mun) => (
+                  <li>
+                    <a href={`/omrader/${mun.slug}/`}>{mun.name}</a>
+                  </li>
+                ))
+              }
+              <li>
+                <a href="/sitemap.xml">XML-Sidekart (68 ruter)</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="footer-bottom">
+          <span>© 2026 ByggFlyt.no — Deterministisk B2B Rigg- &amp; Maskinportal for Østlandet.</span>
+          <span>Kun for registrerte foretak (AS / ENK med org.nr) • TEK17 &amp; HMS-forankret</span>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

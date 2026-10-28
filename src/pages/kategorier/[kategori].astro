@@ -1,0 +1,119 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import CalculatorWidget from "../../components/CalculatorWidget.astro";
+import LeadCaptureForm from "../../components/LeadCaptureForm.astro";
+import { CATEGORIES, type CategoryProfile } from "../../data/categories.js";
+import { MUNICIPALITIES } from "../../data/municipalities.js";
+
+export function getStaticPaths() {
+  return CATEGORIES.map((category) => ({
+    params: { kategori: category.slug },
+    props: { category }
+  }));
+}
+
+interface Props {
+  category: CategoryProfile;
+}
+
+const { category } = Astro.props;
+---
+
+<BaseLayout
+  title={`${category.title} på Østlandet — Kalkulator & B2B-Bestilling | ByggFlyt`}
+  description={`${category.heroTagline} Bruk vår gratis ${category.calculatorTitle} og bestill direkte fra lokal B2B-leverandør på Østlandet.`}
+  canonicalPath={`/kategorier/${category.slug}/`}
+>
+  <section class="hero-section">
+    <div class="container">
+      <nav class="breadcrumb-nav" aria-label="Brødsmulesti">
+        <a href="/">Hjem</a>
+        <span>/</span>
+        <span>{category.shortTitle}</span>
+      </nav>
+      <div class="eyebrow-row">
+        <span class="badge badge-amber">{category.badgeCode}</span>
+        <span class="badge badge-emerald">TYPISK RAMME: {category.typicalTicketRangeNok}</span>
+      </div>
+      <h1 class="hero-title">{category.title}</h1>
+      <p class="hero-lead">{category.heroTagline}</p>
+      <div class="hero-actions">
+        <a href="#fagkalkulator" class="btn btn-primary">Åpne {category.calculatorTitle} ↓</a>
+        <a href="#bestill" class="btn btn-outline-light">Send direkte B2B-forespørsel</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section-block" id="fagkalkulator">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">{category.calculatorTitle}</h2>
+        <p class="section-desc">{category.calculatorSubtitle}</p>
+      </div>
+      <CalculatorWidget initialCategory={category.slug} showAllTabs={false} />
+    </div>
+  </section>
+
+  <section class="section-block section-subtle">
+    <div class="container">
+      <div class="grid-2">
+        <div class="card">
+          <h2 class="card-title">Maskin- og utstyrseksempler i kategorien</h2>
+          <ul class="spec-list">
+            {category.equipmentExamples.map((ex) => <li>{ex}</li>)}
+          </ul>
+        </div>
+        <div class="card">
+          <h2 class="card-title">Lovpålagte HMS-, kompetanse- og forskriftskrav</h2>
+          <ul class="spec-list">
+            {category.certificationsRequired.map((cert) => <li>{cert}</li>)}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section-block">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">Velg lokalt leveranseområde for {category.shortTitle.toLowerCase()}</h2>
+        <p class="section-desc">
+          Hver lokal side er forhåndsinnstilt med kommunens klimadata, grunnforhold, miljøkrav og transportkorridorer.
+        </p>
+      </div>
+
+      <div class="grid-3">
+        {
+          MUNICIPALITIES.map((mun) => (
+            <a href={`/utleie/${mun.slug}/${category.slug}/`} class="card card-interactive">
+              <div class="eyebrow-row">
+                <span class="badge badge-light">Postnr. {mun.postalRange}</span>
+              </div>
+              <h3 class="card-title">
+                {category.shortTitle} i {mun.name}
+              </h3>
+              <p class="card-text">
+                Knutepunkter: {mun.keyHubs.slice(0, 3).join(", ")}. Maskinflytting: {mun.flatbedTransferNokRange}.
+              </p>
+              <div class="card-meta">
+                <span>Teledybde ~{mun.frostDepthCm} cm</span>
+                <span>Åpne lokal side →</span>
+              </div>
+            </a>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <section class="section-block section-subtle">
+    <div class="container">
+      <LeadCaptureForm
+        defaultCategory={category.slug}
+        headingText={`Bestill ${category.shortTitle.toLowerCase()} — ferdig spesifisert for EHF`}
+      />
+    </div>
+  </section>
+
+  <script src="../../scripts/directory-client.ts"></script>
+</BaseLayout>

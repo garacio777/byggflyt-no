@@ -1,0 +1,226 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { CATEGORIES } from "../data/categories.js";
+import { MUNICIPALITIES } from "../data/municipalities.js";
+import { getTerritorySlotInfo } from "../lib/calculators.js";
+
+const featuredSlots = MUNICIPALITIES.flatMap((mun) =>
+  CATEGORIES.map((cat) => ({
+    municipality: mun,
+    category: cat,
+    slot: getTerritorySlotInfo(mun.slug, cat.slug)
+  }))
+);
+---
+
+<BaseLayout
+  title="Lei Eksklusivt B2B-Territorium på Østlandet (Rank & Rent) | ByggFlyt"
+  description="For utleieselskaper, maskinentreprenører, kranbil, stillas og containeraktører: lei eksklusiv tilgang til ferdig beregnede, Brreg-verifiserte B2B-oppdrag i ditt nærområde."
+  canonicalPath="/bli-partner/"
+>
+  <section class="hero-section">
+    <div class="container">
+      <div class="eyebrow-row">
+        <span class="badge badge-amber">EKSKLUSIV B2B TERRITORIE-LEIE</span>
+        <span class="badge badge-emerald">NULL PRISKRIG MOT 5 KONKURRENTER</span>
+      </div>
+      <h1 class="hero-title">
+        Lei eksklusiv tilgang til ferdig spesifiserte anleggs- og utleieoppdrag i ditt distrikt
+      </h1>
+      <p class="hero-lead">
+        På vanlige anbudsportaler betaler du for uavklarte privathenvendelser som sendes til fem konkurrenter samtidig.
+        På ByggFlyt leier dere <strong>ett eksklusivt fagterritorium</strong> (kommune × fagområde) og mottar 100 % av
+        Brreg-verifiserte B2B-forespørsler ferdig dimensjonert med kW, tonnasje, marktrykk og leveringstidspunkt.
+      </p>
+
+      <div class="hero-stats-grid">
+        <div class="stat-card-dark">
+          <span class="stat-label">Eksklusivitet</span>
+          <span class="stat-value">1 partner per sone</span>
+        </div>
+        <div class="stat-card-dark">
+          <span class="stat-label">Kundetype</span>
+          <span class="stat-value">100 % org.nr / EHF</span>
+        </div>
+        <div class="stat-card-dark">
+          <span class="stat-label">Snitt ordrestørrelse</span>
+          <span class="stat-value">15 000 – 220 000 kr</span>
+        </div>
+        <div class="stat-card-dark">
+          <span class="stat-label">Totalt antall soner v1</span>
+          <span class="stat-value">50 Østlandet-soner</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section-block">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">Ledige eksklusive territorier på Østlandet (50 fagsoner)</h2>
+        <p class="section-desc">
+          Klikk «Velg sone» for å reservere eksklusivitet i 48 timer mens vi gjennomgår depotdekning og kapasitet.
+        </p>
+      </div>
+
+      <div class="table-wrap">
+        <table class="matrix-table">
+          <thead>
+            <tr>
+              <th>Region / Kommune</th>
+              <th>Fagområde</th>
+              <th>Est. B2B-oppdrag/mnd</th>
+              <th>Typisk ordrestørrelse</th>
+              <th>Fast månedsleie</th>
+              <th>Handling</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              featuredSlots.map(({ municipality, category, slot }) => (
+                <tr>
+                  <td>
+                    <a href={`/utleie/${municipality.slug}/${category.slug}/`}>
+                      <strong>{municipality.name}</strong>
+                    </a>
+                  </td>
+                  <td>{category.shortTitle}</td>
+                  <td>
+                    {slot.estMonthlyLeadsMin}–{slot.estMonthlyLeadsMax} stk.
+                  </td>
+                  <td>{category.typicalTicketRangeNok}</td>
+                  <td>
+                    <strong>{slot.monthlyLeaseNok.toLocaleString("nb-NO")} kr/mnd</strong>
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      class="btn btn-outline btn-sm"
+                      data-select-slot
+                      data-slot-mun={municipality.slug}
+                      data-slot-cat={category.slug}
+                    >
+                      Velg sone
+                    </button>
+                  </td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="section-block section-subtle" id="reservasjon">
+    <div class="container">
+      <div class="lead-panel">
+        <span class="badge badge-partner-open">48 TIMERS UFORPLIKTENDE RESERVASJON</span>
+        <h2 class="section-title">Søk om eksklusivt partnerterritorium</h2>
+        <p class="section-desc">
+          Oppgi foretakets organisasjonsnummer, nærmeste utleveringsdepot og hvilken sone dere ønsker enerett på.
+        </p>
+
+        <form data-partner-form novalidate>
+          <div class="form-grid">
+            <div class="field-group">
+              <label class="field-label" for="partner-orgnr">Organisasjonsnummer (9 siffer)</label>
+              <div class="org-verify-row">
+                <input
+                  id="partner-orgnr"
+                  type="text"
+                  inputmode="numeric"
+                  placeholder="f.eks. 923609016"
+                  required
+                  class="field-input"
+                  data-partner-orgnr
+                />
+                <button type="button" class="btn btn-dark btn-sm" data-partner-verify-btn>
+                  Sjekk Brreg
+                </button>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label class="field-label" for="partner-company">Utleieselskap / Entreprenør (AS)</label>
+              <input id="partner-company" type="text" required class="field-input" data-partner-company />
+            </div>
+
+            <div class="field-group">
+              <label class="field-label" for="partner-contact">Kontaktperson (Daglig leder / Salgssjef)</label>
+              <input id="partner-contact" type="text" required class="field-input" data-partner-contact />
+            </div>
+
+            <div class="field-group">
+              <label class="field-label" for="partner-email">E-post for lead-ruting / webhook</label>
+              <input id="partner-email" type="email" required class="field-input" data-partner-email />
+            </div>
+
+            <div class="field-group">
+              <label class="field-label" for="partner-phone">Direktetelefon vakt / dispatch</label>
+              <input id="partner-phone" type="tel" required class="field-input" data-partner-phone />
+            </div>
+
+            <div class="field-group">
+              <label class="field-label" for="partner-depot">Adresse / poststed nærmeste depot</label>
+              <input
+                id="partner-depot"
+                type="text"
+                placeholder="f.eks. Spydeberg / Vinterbro / Alnabru"
+                required
+                class="field-input"
+                data-partner-depot
+              />
+            </div>
+
+            <div class="field-group">
+              <label class="field-label" for="partner-mun">Ønsket region</label>
+              <select id="partner-mun" class="field-select" data-partner-mun>
+                {
+                  MUNICIPALITIES.map((mun) => (
+                    <option value={mun.slug}>{mun.name}</option>
+                  ))
+                }
+              </select>
+            </div>
+
+            <div class="field-group">
+              <label class="field-label" for="partner-cat">Ønsket fagområde</label>
+              <select id="partner-cat" class="field-select" data-partner-cat>
+                {
+                  CATEGORIES.map((cat) => (
+                    <option value={cat.slug}>{cat.shortTitle}</option>
+                  ))
+                }
+              </select>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label" for="partner-fleet">
+              Kort om maskinpark, kapasitet og utrykningstid (minst 10 tegn)
+            </label>
+            <textarea
+              id="partner-fleet"
+              rows="3"
+              required
+              placeholder="F.eks. Egen maskinhenger, 45 utleieenheter innen gravemaskin/lift/byggvarme på lager, levering innen 2 timer."
+              class="field-textarea"
+              data-partner-fleet
+            ></textarea>
+          </div>
+
+          <div class="hero-actions">
+            <button type="submit" class="btn btn-primary" data-partner-submit>
+              Reserver eksklusivt territorium (48t)
+            </button>
+          </div>
+
+          <div class="status-banner" data-partner-feedback hidden></div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <script src="../scripts/partner-client.ts"></script>
+</BaseLayout>

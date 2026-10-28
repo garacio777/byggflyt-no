@@ -1,0 +1,187 @@
+---
+import type { CategorySlug, MunicipalitySlug } from "../schemas/directory.js";
+import { CATEGORIES } from "../data/categories.js";
+import { MUNICIPALITIES } from "../data/municipalities.js";
+
+interface Props {
+  defaultMunicipality?: MunicipalitySlug;
+  defaultCategory?: CategorySlug;
+  defaultPostalCode?: string;
+  headingText?: string;
+}
+
+const {
+  defaultMunicipality = "nordre-follo-aas",
+  defaultCategory = "maskinutleie",
+  defaultPostalCode = "1430",
+  headingText = "Send ferdig spesifisert B2B-forespørsel til lokal leverandør"
+} = Astro.props;
+---
+
+<div class="lead-panel" id="bestill" data-lead-form-shell>
+  <div class="eyebrow-row">
+    <span class="badge badge-partner-open">KUN B2B • EHF / ORG.NR-VERIFISERT</span>
+    <span class="badge badge-light">1 EKSKLUSIV LOKAL AKTØR — NULL ANBUDSSPAM</span>
+  </div>
+  <h2 class="section-title">{headingText}</h2>
+  <p class="section-desc">
+    Slå opp bedriftens organisasjonsnummer mot Brønnøysundregistrene og send ferdig beregnet behov.
+    Ingen videresalg til 5 tilfeldige selgere.
+  </p>
+
+  <form data-lead-form novalidate>
+    <div class="form-grid">
+      <div class="field-group">
+        <label class="field-label" for="lead-orgnr">Organisasjonsnummer (9 siffer)</label>
+        <div class="org-verify-row">
+          <input
+            id="lead-orgnr"
+            name="orgNr"
+            type="text"
+            inputmode="numeric"
+            placeholder="f.eks. 923609016"
+            required
+            class="field-input"
+            data-lead-orgnr
+          />
+          <button type="button" class="btn btn-dark btn-sm" data-verify-org-btn>
+            Sjekk Brreg
+          </button>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="lead-company">Firmanavn (AS / ENK)</label>
+        <input
+          id="lead-company"
+          name="companyName"
+          type="text"
+          placeholder="Hentes automatisk eller skriv inn"
+          required
+          class="field-input"
+          data-lead-company
+        />
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="lead-contact">Kontaktperson / Anleggsleder</label>
+        <input
+          id="lead-contact"
+          name="contactName"
+          type="text"
+          placeholder="Navn på bestiller på plass"
+          required
+          class="field-input"
+          data-lead-contact
+        />
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="lead-phone">Mobilnummer (SMS-bekreftelse)</label>
+        <input
+          id="lead-phone"
+          name="phone"
+          type="tel"
+          placeholder="f.eks. 912 34 567"
+          required
+          class="field-input"
+          data-lead-phone
+        />
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="lead-municipality">Område / Region</label>
+        <select id="lead-municipality" name="municipalitySlug" class="field-select" data-lead-municipality>
+          {
+            MUNICIPALITIES.map((mun) => (
+              <option value={mun.slug} selected={mun.slug === defaultMunicipality}>
+                {mun.name} ({mun.postalRange})
+              </option>
+            ))
+          }
+        </select>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="lead-category">Fagområde</label>
+        <select id="lead-category" name="categorySlug" class="field-select" data-lead-category>
+          {
+            CATEGORIES.map((cat) => (
+              <option value={cat.slug} selected={cat.slug === defaultCategory}>
+                {cat.shortTitle}
+              </option>
+            ))
+          }
+        </select>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="lead-postal">Postnummer byggeplass</label>
+        <input
+          id="lead-postal"
+          name="postalCode"
+          type="text"
+          inputmode="numeric"
+          maxlength="4"
+          value={defaultPostalCode}
+          required
+          class="field-input"
+          data-lead-postal
+        />
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="lead-days">Antall leiedøgn (estimat)</label>
+        <input
+          id="lead-days"
+          name="durationDays"
+          type="number"
+          min="1"
+          max="365"
+          value="5"
+          required
+          class="field-input"
+          data-lead-days
+        />
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="lead-urgency">Leveringsfrist</label>
+        <select id="lead-urgency" name="urgency" class="field-select" data-lead-urgency>
+          <option value="IMORGEN_0700" selected>I morgen kl. 07:00 på rigg</option>
+          <option value="AKUTT_IDAG">Akutt i dag (hastetransport)</option>
+          <option value="DENNE_UKEN">I løpet av uken</option>
+          <option value="PLANLAGT_ANBUD">Planlagt oppstart / anbudsprising</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="status-banner status-ok" data-org-status hidden></div>
+
+    <div class="field-group">
+      <label class="field-label" for="lead-desc">
+        Spesifikasjon / melding fra anleggsleder (overføres gjerne fra kalkulatoren over)
+      </label>
+      <textarea
+        id="lead-desc"
+        name="rawNeedDescription"
+        rows="3"
+        required
+        placeholder="F.eks.: Trenger 8,5t korthekker beltegraver med pusseskuffe og 250 kg vibroplate levert til byggeplass kl 07:00."
+        class="field-textarea"
+        data-lead-desc
+      ></textarea>
+    </div>
+
+    <div class="hero-actions">
+      <button type="submit" class="btn btn-primary" data-lead-submit>
+        Send verifisert B2B-forespørsel
+      </button>
+      <button type="button" class="btn btn-outline btn-sm" data-fill-demo-lead>
+        Fyll raskt test-eksempel
+      </button>
+    </div>
+
+    <div class="status-banner" data-lead-feedback hidden></div>
+  </form>
+</div>

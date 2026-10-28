@@ -1,0 +1,154 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import CalculatorWidget from "../components/CalculatorWidget.astro";
+import LeadCaptureForm from "../components/LeadCaptureForm.astro";
+import { CATEGORIES } from "../data/categories.js";
+import { MUNICIPALITIES } from "../data/municipalities.js";
+---
+
+<BaseLayout
+  title="ByggFlyt.no — B2B Rigg-, Maskin- & Anleggsportal for Østlandet"
+  description="Ferdig dimensjonert maskinutleie, lift/stillas, teletining, byggestrøm og container på Østlandet. Gratis 06:45 feltkalkulatorer og EHF-verifisert B2B-bestilling uten anbudsspam."
+  canonicalPath="/"
+>
+  <section class="hero-section">
+    <div class="container">
+      <div class="eyebrow-row">
+        <span class="badge badge-amber">ØSTLANDET B2B ANLEGGSPORTAL</span>
+        <span class="badge badge-emerald">MODULUS-11 / BRREG VERIFISERT</span>
+      </div>
+      <h1 class="hero-title">
+        Dimensjoner rigg, maskin og vinterdrift på 30 sekunder — bestill direkte fra lokal fagpartner
+      </h1>
+      <p class="hero-lead">
+        Slutt på PDF-kataloger, feildimensjonert utstyr og anbudstjenester som selger telefonnummeret ditt til fem selgere.
+        Bruk våre deterministiske 06:45-feltkalkulatorer og send ferdig spesifisert EHF-oppdrag til ett lokalt depot nær byggeplassen.
+      </p>
+      <div class="hero-actions">
+        <a href="#kalkulator" class="btn btn-primary">Åpne feltkalkulator ↓</a>
+        <a href="#omrader" class="btn btn-outline-light">Velg kommune / region (10)</a>
+        <a href="/bli-partner/" class="btn btn-outline-light">For utleiere: Lei eksklusivt territorium →</a>
+      </div>
+
+      <div class="hero-stats-grid">
+        <div class="stat-card-dark">
+          <span class="stat-label">Dekningskart v1</span>
+          <span class="stat-value">10 regioner • 50 fagsoner</span>
+        </div>
+        <div class="stat-card-dark">
+          <span class="stat-label">Kvalifisering</span>
+          <span class="stat-value">Kun aktive foretak (Brreg)</span>
+        </div>
+        <div class="stat-card-dark">
+          <span class="stat-label">Teknisk kontroll</span>
+          <span class="stat-value">Marktrykk • kW • BESS • TEK17</span>
+        </div>
+        <div class="stat-card-dark">
+          <span class="stat-label">Ingen priskrig-spam</span>
+          <span class="stat-value">1 eksklusiv partner per sone</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section-block" id="kalkulator">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">06:45 Brakkerigg-kalkulator — regn ut riktig spesifikasjon før bestilling</h2>
+        <p class="section-desc">
+          Velg fagområde under, juster tallene for byggeplassen og overfør ferdig teknisk spesifikasjon rett til lokal forespørsel.
+        </p>
+      </div>
+      <CalculatorWidget showAllTabs={true} initialCategory="maskinutleie" />
+    </div>
+  </section>
+
+  <section class="section-block section-subtle" id="kategorier">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">5 høy-kritiske B2B-fagområder i bygge- og anleggsbransjen</h2>
+        <p class="section-desc">
+          Hvert fagområde har egne dimensjoneringsverktøy, HMS-/forskriftskrav og lokale leveransekorridorer.
+        </p>
+      </div>
+
+      <div class="grid-3">
+        {
+          CATEGORIES.map((cat) => (
+            <a href={`/kategorier/${cat.slug}/`} class="card card-interactive">
+              <div class="eyebrow-row">
+                <span class="badge badge-light">{cat.badgeCode}</span>
+              </div>
+              <h3 class="card-title">{cat.shortTitle}</h3>
+              <p class="card-text">{cat.heroTagline}</p>
+              <div class="card-meta">
+                <span>Typisk ramme: {cat.typicalTicketRangeNok}</span>
+                <span>Åpne fagportal →</span>
+              </div>
+            </a>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <section class="section-block" id="omrader">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">Velg region på Østlandet — lokale grunnforhold, teledybde og miljøkrav</h2>
+        <p class="section-desc">
+          Kort avstand til lokalt depot kutter maskinflytting med tusenlapper og reduserer ståtid ved hastebehov.
+        </p>
+      </div>
+
+      <div class="grid-2">
+        {
+          MUNICIPALITIES.map((mun) => (
+            <div class="card">
+              <div class="eyebrow-row">
+                <span class="badge badge-light">Postnr. {mun.postalRange}</span>
+                <span class="badge badge-partner-open">Telefri dybde ~{mun.frostDepthCm} cm</span>
+              </div>
+              <h3 class="card-title">
+                <a href={`/omrader/${mun.slug}/`}>{mun.name}</a>
+              </h3>
+              <p class="card-text">
+                <strong>Knutepunkter:</strong> {mun.keyHubs.join(", ")}. {mun.emissionPolicySummary}
+              </p>
+              <div class="eyebrow-row">
+                {CATEGORIES.map((cat) => (
+                  <a href={`/utleie/${mun.slug}/${cat.slug}/`} class="btn btn-outline btn-sm">
+                    {cat.shortTitle}
+                  </a>
+                ))}
+              </div>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <section class="section-block section-subtle">
+    <div class="container">
+      <LeadCaptureForm />
+    </div>
+  </section>
+
+  <section class="section-block">
+    <div class="container">
+      <div class="partner-callout">
+        <div>
+          <span class="badge badge-partner-open">RANK &amp; RENT PARTNERPROGRAM</span>
+          <h2 class="section-title">Driver du utleieselskap, maskinentreprenør, kranbil eller stillasfirma?</h2>
+          <p class="section-desc">
+            Lei eksklusiv tilgang til ferdig beregnede, Brreg-verifiserte B2B-forespørsler i din kommune og ditt fagområde — uten budrunde mot lavprisaktører.
+          </p>
+        </div>
+        <a href="/bli-partner/" class="btn btn-dark">Se ledige territorier og priser →</a>
+      </div>
+    </div>
+  </section>
+
+  <script src="../scripts/directory-client.ts"></script>
+</BaseLayout>

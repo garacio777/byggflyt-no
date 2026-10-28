@@ -1,0 +1,244 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import CalculatorWidget from "../../../components/CalculatorWidget.astro";
+import LeadCaptureForm from "../../../components/LeadCaptureForm.astro";
+import { CATEGORIES, type CategoryProfile } from "../../../data/categories.js";
+import { MUNICIPALITIES, type MunicipalityProfile } from "../../../data/municipalities.js";
+import { getTerritorySlotInfo } from "../../../lib/calculators.js";
+
+export function getStaticPaths() {
+  const paths: Array<{
+    params: { kommune: string; kategori: string };
+    props: { municipality: MunicipalityProfile; category: CategoryProfile };
+  }> = [];
+
+  for (const municipality of MUNICIPALITIES) {
+    for (const category of CATEGORIES) {
+      paths.push({
+        params: { kommune: municipality.slug, kategori: category.slug },
+        props: { municipality, category }
+      });
+    }
+  }
+  return paths;
+}
+
+interface Props {
+  municipality: MunicipalityProfile;
+  category: CategoryProfile;
+}
+
+const { municipality, category } = Astro.props;
+const slotInfo = getTerritorySlotInfo(municipality.slug, category.slug);
+const isStrictZeroEmission = municipality.emissionPolicyLevel === "STRENG_UTSLIPPSFRI";
+
+const siblingCategories = CATEGORIES.filter((item) => item.slug !== category.slug);
+const nearbyMunicipalities = MUNICIPALITIES.filter((item) => item.slug !== municipality.slug).slice(0, 4);
+
+const localFaqs = [
+  {
+    q: `Hva koster ${category.shortTitle.toLowerCase()} for bedrifter i ${municipality.name}?`,
+    a: `Typisk B2B-oppdragsramme i ${municipality.name} ligger mellom ${category.typicalTicketRangeNok} avhengig av varighet, kapasitetsklasse og rigging. Maskinflytting i området (${municipality.keyHubs.slice(0, 3).join(", ")}) ligger normalt på ${municipality.flatbedTransferNokRange}.`
+  },
+  {
+    q: `Hvilke lokale forhold i ${municipality.shortName} påvirker valg av utstyr?`,
+    a: `${municipality.groundConditionProfile} I tillegg er dimensjonerende vintertemperatur ${municipality.designWinterTempC} °C (telefri dybde ca. ${municipality.frostDepthCm} cm). ${municipality.emissionPolicySummary}`
+  },
+  {
+    q: `Hvordan fungerer bestilling via ByggFlyt i ${municipality.name}?`,
+    a: `Du dimensjonerer behovet i kalkulatoren på siden, verifiserer foretakets organisasjonsnummer mot Enhetsregisteret (Modulus-11) og sender forespørselen til én kvalitetssikret lokal aktør — helt uten videresalg til flere konkurrerende selgere.`
+  }
+];
+---
+
+<BaseLayout
+  title={`${category.shortTitle} i ${municipality.name} — Kalkulator, Pris & B2B-Levering | ByggFlyt`}
+  description={`Bestill ${category.shortTitle.toLowerCase()} i ${municipality.name} (${municipality.keyHubs.slice(0, 3).join(", ")}). Gratis ${category.calculatorTitle}, lokale grunn- og klimadata og rask EHF-leveranse.`}
+  canonicalPath={`/utleie/${municipality.slug}/${category.slug}/`}
+>
+  <article itemscope itemtype="https://schema.org/Service">
+    <meta itemprop="name" content={`${category.shortTitle} i ${municipality.name}`} />
+    <meta itemprop="serviceType" content={category.title} />
+    <meta itemprop="areaServed" content={municipality.name} />
+
+    <section class="hero-section">
+      <div class="container">
+        <nav class="breadcrumb-nav" aria-label="Brødsmulesti">
+          <a href="/">Hjem</a>
+          <span>/</span>
+          <a href={`/omrader/${municipality.slug}/`}>{municipality.name}</a>
+          <span>/</span>
+          <span>{category.shortTitle}</span>
+        </nav>
+
+        <div class="eyebrow-row">
+          <span class="badge badge-amber">{municipality.shortName.toUpperCase()} • {category.badgeCode}</span>
+          <span class="badge badge-emerald">POSTNR. {municipality.postalRange}</span>
+        </div>
+
+        <h1 class="hero-title">
+          {category.shortTitle} i {municipality.name}
+        </h1>
+        <p class="hero-lead" itemprop="description">
+          {category.heroTagline} Tilpasset byggeplasser i {municipality.keyHubs.join(", ")} med rask levering langs{" "}
+          {municipality.logisticsCorridors}.
+        </p>
+
+        <div class="hero-actions">
+          <a href="#lokal-kalkulator" class="btn btn-primary">Beregn spesifikasjon nå ↓</a>
+          <a href="#bestill" class="btn btn-outline-light">Gå rett til B2B-bestilling</a>
+        </div>
+
+        <div class="hero-stats-grid">
+          <div class="stat-card-dark">
+            <span class="stat-label">Veiledende oppdragsramme</span>
+            <span class="stat-value">{category.typicalTicketRangeNok}</span>
+          </div>
+          <div class="stat-card-dark">
+            <span class="stat-label">Lokal maskinflytting</span>
+            <span class="stat-value">{municipality.flatbedTransferNokRange}</span>
+          </div>
+          <div class="stat-card-dark">
+            <span class="stat-label">Vinter / Tele i {municipality.shortName}</span>
+            <span class="stat-value">{municipality.designWinterTempC} °C / {municipality.frostDepthCm} cm</span>
+          </div>
+          <div class="stat-card-dark">
+            <span class="stat-label">Sonekode</span>
+            <span class="stat-value">{slotInfo.slotKey}</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-block" id="lokal-kalkulator">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title">
+            {category.calculatorTitle} — forhåndsinnstilt for {municipality.name}
+          </h2>
+          <p class="section-desc">{category.calculatorSubtitle}</p>
+        </div>
+
+        <CalculatorWidget
+          initialCategory={category.slug}
+          showAllTabs={false}
+          defaultFrostDepthCm={municipality.frostDepthCm}
+          defaultWinterTempC={municipality.designWinterTempC}
+          defaultZeroEmission={isStrictZeroEmission}
+        />
+      </div>
+    </section>
+
+    <section class="section-block section-subtle">
+      <div class="container">
+        <div class="grid-3">
+          <div class="card">
+            <h2 class="card-title">Grunnforhold og tilkomst i {municipality.shortName}</h2>
+            <p class="card-text">{municipality.groundConditionProfile}</p>
+            <p class="card-text">
+              <strong>Transportakser:</strong> {municipality.logisticsCorridors}.
+            </p>
+          </div>
+
+          <div class="card">
+            <h2 class="card-title">Lokale miljø- og anbudskrav</h2>
+            <p class="card-text">{municipality.emissionPolicySummary}</p>
+            <ul class="spec-list">
+              {category.painPointsSolved.map((pt) => <li>{pt}</li>)}
+            </ul>
+          </div>
+
+          <div class="card">
+            <h2 class="card-title">Aktuelt utstyr &amp; HMS-krav</h2>
+            <ul class="spec-list">
+              {category.equipmentExamples.slice(0, 4).map((eq) => <li>{eq}</li>)}
+              <li>
+                <strong>Kompetanse/HMS:</strong> {category.certificationsRequired[0]}
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-block">
+      <div class="container">
+        <LeadCaptureForm
+          defaultMunicipality={municipality.slug}
+          defaultCategory={category.slug}
+          defaultPostalCode={municipality.samplePostalCode}
+          headingText={`Bestill ${category.shortTitle.toLowerCase()} i ${municipality.name} (EHF / B2B)`}
+        />
+      </div>
+    </section>
+
+    <section class="section-block section-subtle" itemscope itemtype="https://schema.org/FAQPage">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title">
+            Ofte stilte spørsmål om {category.shortTitle.toLowerCase()} i {municipality.name}
+          </h2>
+        </div>
+
+        {
+          localFaqs.map((faq) => (
+            <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+              <h3 class="faq-question" itemprop="name">{faq.q}</h3>
+              <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+                <p class="faq-answer" itemprop="text">{faq.a}</p>
+              </div>
+            </div>
+          ))
+        }
+      </div>
+    </section>
+
+    <section class="section-block">
+      <div class="container">
+        <div class="partner-callout">
+          <div>
+            <span class="badge badge-partner-open">LEDIG EKSKLUSIVT PARTNER-TERRITORIUM</span>
+            <h2 class="card-title">
+              Leverer dere {category.shortTitle.toLowerCase()} i {municipality.name}?
+            </h2>
+            <p class="card-text">
+              Sone <code>{slotInfo.slotKey}</code> (estimert {slotInfo.estMonthlyLeadsMin}–{slotInfo.estMonthlyLeadsMax}{" "}
+              spesifiserte B2B-forespørsler/mnd) kan leies eksklusivt for{" "}
+              <strong>{slotInfo.monthlyLeaseNok.toLocaleString("nb-NO")} kr/mnd eks. mva</strong>.
+            </p>
+          </div>
+          <a href="/bli-partner/" class="btn btn-dark btn-sm">Reserver territorium →</a>
+        </div>
+
+        <div class="grid-2">
+          <div>
+            <h3>Andre fagområder i {municipality.name}</h3>
+            <div class="eyebrow-row">
+              {
+                siblingCategories.map((sib) => (
+                  <a href={`/utleie/${municipality.slug}/${sib.slug}/`} class="btn btn-outline btn-sm">
+                    {sib.shortTitle}
+                  </a>
+                ))
+              }
+            </div>
+          </div>
+          <div>
+            <h3>{category.shortTitle} i nærliggende regioner</h3>
+            <div class="eyebrow-row">
+              {
+                nearbyMunicipalities.map((near) => (
+                  <a href={`/utleie/${near.slug}/${category.slug}/`} class="btn btn-outline btn-sm">
+                    {near.shortName}
+                  </a>
+                ))
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </article>
+
+  <script src="../../../scripts/directory-client.ts"></script>
+</BaseLayout>

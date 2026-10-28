@@ -1,0 +1,310 @@
+---
+import type { CategorySlug } from "../schemas/directory.js";
+import { CATEGORIES } from "../data/categories.js";
+import {
+  calculateExcavatorSpec,
+  calculateLiftSpec,
+  calculateMassWasteSpec,
+  calculateSitePowerSpec,
+  calculateWinterHeatSpec,
+  type UnifiedCalcOutput
+} from "../lib/calculators.js";
+
+interface Props {
+  initialCategory?: CategorySlug;
+  showAllTabs?: boolean;
+  defaultFrostDepthCm?: number;
+  defaultWinterTempC?: number;
+  defaultZeroEmission?: boolean;
+}
+
+const {
+  initialCategory = "maskinutleie",
+  showAllTabs = true,
+  defaultFrostDepthCm = 155,
+  defaultWinterTempC = -16,
+  defaultZeroEmission = false
+} = Astro.props;
+
+function getInitialResult(cat: CategorySlug): UnifiedCalcOutput {
+  switch (cat) {
+    case "maskinutleie":
+      return calculateExcavatorSpec({
+        trenchDepthMeters: 2.2,
+        layerThicknessCm: 30,
+        gateWidthCm: 240,
+        zeroEmissionRequired: defaultZeroEmission,
+        durationDays: 5
+      });
+    case "lift-og-stillas":
+      return calculateLiftSpec({
+        workingHeightMeters: 16,
+        horizontalOutreachMeters: 6,
+        surfaceType: "ASFALT_BETONG",
+        gateWidthCm: 250,
+        durationDays: 5
+      });
+    case "vintervarme-og-teletining":
+      return calculateWinterHeatSpec({
+        areaSqm: 120,
+        frostDepthCm: defaultFrostDepthCm,
+        ambientTempC: defaultWinterTempC,
+        groundType: "VAAT_LEIRE",
+        durationDays: 4
+      });
+    case "byggestrom-og-utslippsfri-rigg":
+      return calculateSitePowerSpec({
+        crewCount: 8,
+        gridFuseAmps: 63,
+        electricMachinesCount: defaultZeroEmission ? 2 : 1,
+        heatingLoadKw: 18,
+        fenceMeters: 110,
+        durationDays: 30
+      });
+    case "container-kranbil-og-masse":
+      return calculateMassWasteSpec({
+        areaSqm: 140,
+        thicknessCm: 35,
+        materialType: "PUKK_8_16",
+        buildingBraSqm: 380
+      });
+  }
+}
+
+const initialOutput = getInitialResult(initialCategory);
+---
+
+<div class="calc-shell" data-calc-widget data-active-cat={initialCategory}>
+  {
+    showAllTabs && (
+      <div class="calc-tabs" role="tablist" aria-label="Velg fagkalkulator">
+        {CATEGORIES.map((cat) => (
+          <button
+            type="button"
+            role="tab"
+            class="calc-tab-btn"
+            aria-selected={cat.slug === initialCategory ? "true" : "false"}
+            data-calc-tab={cat.slug}
+          >
+            {cat.shortTitle}
+          </button>
+        ))}
+      </div>
+    )
+  }
+
+  <div class="calc-body">
+    <div>
+      <!-- Panel 1: Maskinutleie -->
+      <div data-calc-panel="maskinutleie" hidden={initialCategory !== "maskinutleie"}>
+        <h3 class="card-title">Gravemaskin- &amp; Komprimerings-velger</h3>
+        <p class="card-text">Dimensjoner maskinklasse, drivlinje og vibroplate på 10 sekunder.</p>
+        <div class="form-grid">
+          <label class="field-group">
+            <span class="field-label">Grøfte-/gravedybde (m)</span>
+            <input type="number" step="0.2" min="0.4" max="6.5" value="2.2" class="field-input" data-ex-depth />
+          </label>
+          <label class="field-group">
+            <span class="field-label">Lagtykkelse pukk/masse (cm)</span>
+            <input type="number" step="5" min="10" max="80" value="30" class="field-input" data-ex-layer />
+          </label>
+          <label class="field-group">
+            <span class="field-label">Min. port-/passasjebredde (cm)</span>
+            <input type="number" step="5" min="70" max="400" value="240" class="field-input" data-ex-gate />
+          </label>
+          <label class="field-group">
+            <span class="field-label">Leieperiode (virkedager)</span>
+            <input type="number" step="1" min="1" max="180" value="5" class="field-input" data-ex-days />
+          </label>
+        </div>
+        <label class="checkbox-row">
+          <input type="checkbox" checked={defaultZeroEmission} data-ex-zero />
+          <span>Krav om utslippsfri byggeplass (batterielektrisk maskin)</span>
+        </label>
+      </div>
+
+      <!-- Panel 2: Lift & Stillas -->
+      <div data-calc-panel="lift-og-stillas" hidden={initialCategory !== "lift-og-stillas"}>
+        <h3 class="card-title">Lift-, Stillas- &amp; Marktrykk-velger</h3>
+        <p class="card-text">Unngå dekkeskader og feiltransport — sjekk utlegg, underlag og HMS-kurs.</p>
+        <div class="form-grid">
+          <label class="field-group">
+            <span class="field-label">Arbeidshøyde (m)</span>
+            <input type="number" step="1" min="4" max="34" value="16" class="field-input" data-lift-height />
+          </label>
+          <label class="field-group">
+            <span class="field-label">Horisontalt utlegg (m)</span>
+            <input type="number" step="0.5" min="0" max="20" value="6" class="field-input" data-lift-outreach />
+          </label>
+          <label class="field-group">
+            <span class="field-label">Underlag på arbeidssted</span>
+            <select class="field-select" data-lift-surface>
+              <option value="ASFALT_BETONG">Asfalt / fast betongplate</option>
+              <option value="GARASJEDEKKE">Dekke over garasje / belegningsstein</option>
+              <option value="TERRENG_LEIRE">Ujevnt terreng / leire</option>
+              <option value="INNENDORS_GULV">Innendørs ferdig gulv</option>
+            </select>
+          </label>
+          <label class="field-group">
+            <span class="field-label">Min. portbredde (cm)</span>
+            <input type="number" step="5" min="75" max="400" value="250" class="field-input" data-lift-gate />
+          </label>
+          <label class="field-group">
+            <span class="field-label">Varighet (dager)</span>
+            <input type="number" step="1" min="1" max="180" value="5" class="field-input" data-lift-days />
+          </label>
+        </div>
+      </div>
+
+      <!-- Panel 3: Vintervarme & Teletining -->
+      <div data-calc-panel="vintervarme-og-teletining" hidden={initialCategory !== "vintervarme-og-teletining"}>
+        <h3 class="card-title">Teletining- &amp; Byggvarme-kalkulator (kW)</h3>
+        <p class="card-text">Forhåndsutfylt med lokale klimadata — beregn kW, matter og tinetid.</p>
+        <div class="form-grid">
+          <label class="field-group">
+            <span class="field-label">Frosset areal / støpesone (m²)</span>
+            <input type="number" step="10" min="10" max="1500" value="120" class="field-input" data-heat-area />
+          </label>
+          <label class="field-group">
+            <span class="field-label">Teledybde (cm)</span>
+            <input
+              type="number"
+              step="5"
+              min="10"
+              max="220"
+              value={defaultFrostDepthCm}
+              class="field-input"
+              data-heat-frost
+            />
+          </label>
+          <label class="field-group">
+            <span class="field-label">Utetemperatur (°C)</span>
+            <input
+              type="number"
+              step="1"
+              min="-30"
+              max="5"
+              value={defaultWinterTempC}
+              class="field-input"
+              data-heat-temp
+            />
+          </label>
+          <label class="field-group">
+            <span class="field-label">Grunntype / formål</span>
+            <select class="field-select" data-heat-ground>
+              <option value="VAAT_LEIRE">Våt leire / silt (tung tining)</option>
+              <option value="MORENE_PUKK">Morene / pukk / sand</option>
+              <option value="BETONGHERDING">Frostsikring av nystøpt betong</option>
+            </select>
+          </label>
+          <label class="field-group">
+            <span class="field-label">Leiedøgn</span>
+            <input type="number" step="1" min="2" max="120" value="4" class="field-input" data-heat-days />
+          </label>
+        </div>
+      </div>
+
+      <!-- Panel 4: Byggestrøm & Brakkerigg -->
+      <div
+        data-calc-panel="byggestrom-og-utslippsfri-rigg"
+        hidden={initialCategory !== "byggestrom-og-utslippsfri-rigg"}
+      >
+        <h3 class="card-title">Utslippsfri Byggestrøm- &amp; Brakkerigg-beregner</h3>
+        <p class="card-text">Sjekk om 63A byggestrøm holder eller om du trenger mobil batteribank (BESS).</p>
+        <div class="form-grid">
+          <label class="field-group">
+            <span class="field-label">Antall arbeidere på rigg</span>
+            <input type="number" step="1" min="2" max="80" value="8" class="field-input" data-rig-crew />
+          </label>
+          <label class="field-group">
+            <span class="field-label">Tilgjengelig nettsikring (400V)</span>
+            <select class="field-select" data-rig-fuse>
+              <option value="32">32A byggestrøm (~20 kW)</option>
+              <option value="63" selected>63A byggestrøm (~40 kW)</option>
+              <option value="125">125A byggestrøm (~80 kW)</option>
+            </select>
+          </label>
+          <label class="field-group">
+            <span class="field-label">El-maskiner på lading samtidig</span>
+            <input
+              type="number"
+              step="1"
+              min="0"
+              max="8"
+              value={defaultZeroEmission ? 2 : 1}
+              class="field-input"
+              data-rig-el
+            />
+          </label>
+          <label class="field-group">
+            <span class="field-label">Byggvarme / tørk på strøm (kW)</span>
+            <input type="number" step="3" min="0" max="250" value="18" class="field-input" data-rig-heat />
+          </label>
+          <label class="field-group">
+            <span class="field-label">Byggegjerde omkrets (meter)</span>
+            <input type="number" step="10" min="0" max="2000" value="110" class="field-input" data-rig-fence />
+          </label>
+          <label class="field-group">
+            <span class="field-label">Riggperiode (dager)</span>
+            <input type="number" step="5" min="5" max="365" value="30" class="field-input" data-rig-days />
+          </label>
+        </div>
+      </div>
+
+      <!-- Panel 5: Container, Kranbil & Masse -->
+      <div
+        data-calc-panel="container-kranbil-og-masse"
+        hidden={initialCategory !== "container-kranbil-og-masse"}
+      >
+        <h3 class="card-title">Masse-, Tippbil- &amp; TEK17 Container-kalkulator</h3>
+        <p class="card-text">Beregn fastmasse → løsmasse, tonnasje og lovpålagt TEK17 70 % kildesortering.</p>
+        <div class="form-grid">
+          <label class="field-group">
+            <span class="field-label">Flate / grøfteareal (m²)</span>
+            <input type="number" step="5" min="5" max="5000" value="140" class="field-input" data-mass-area />
+          </label>
+          <label class="field-group">
+            <span class="field-label">Tykkelse / dybde (cm)</span>
+            <input type="number" step="5" min="5" max="200" value="35" class="field-input" data-mass-thick />
+          </label>
+          <label class="field-group">
+            <span class="field-label">Fraksjon / massetype</span>
+            <select class="field-select" data-mass-type>
+              <option value="PUKK_8_16">Pukk 8/16 mm (drenerende)</option>
+              <option value="BAERELAG_0_32">Knust bærelag 0/32 mm</option>
+              <option value="KULT_20_120">Kult / sprengstein 20/120</option>
+              <option value="UTGRAVD_LEIRE">Utgravd leire / overskuddsmasse</option>
+            </select>
+          </label>
+          <label class="field-group">
+            <span class="field-label">Prosjektets bruksareal BRA (m²)</span>
+            <input type="number" step="20" min="0" max="25000" value="380" class="field-input" data-mass-bra />
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Deterministic Output Column -->
+    <div class="calc-result-box" aria-live="polite">
+      <span class="badge badge-amber">DETERMINISTISK FELTBEREGNING</span>
+      <p class="calc-result-headline" data-calc-headline>{initialOutput.headlineSpec}</p>
+
+      <div class="calc-metrics-grid" data-calc-metrics>
+        {
+          initialOutput.keyMetrics.map((metric) => (
+            <div class="metric-tile">
+              <span class="metric-tile-label">{metric.label}</span>
+              <span class="metric-tile-value">{metric.value}</span>
+            </div>
+          ))
+        }
+      </div>
+
+      <p class="calc-compliance-note" data-calc-compliance>{initialOutput.complianceSummary}</p>
+
+      <button type="button" class="btn btn-primary" data-transfer-calc>
+        Overfør spesifikasjon til lokal forespørsel ↓
+      </button>
+    </div>
+  </div>
+</div>
