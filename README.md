@@ -26,3 +26,22 @@ npm run typecheck
 npm run build
 npm run preview
 ```
+
+## Platform Control Plane (`platform/`) — Business Dashboards & Admin Console
+Self-hosted Node 22 service with **zero extra runtime dependencies** (built-in `node:sqlite`, `node:http`, `node:crypto`/scrypt). The public site stays a static Astro build.
+
+| Server | Default URL | Who |
+|---|---|---|
+| Business portal | `http://127.0.0.1:4323` | Businesses register (org.nr Modulus-11), log in, edit their profile, list equipment, request exclusive territories, work their leads |
+| Admin console | `http://127.0.0.1:4322` (localhost only) | Owner approves/suspends businesses, moderates equipment, prices/assigns territories, routes leads, edits site copy & SKU prices |
+
+```bash
+npm run platform          # starts both servers; first run prints a one-time admin access code
+```
+
+- **Tenant isolation:** every business query is scoped to the logged-in business id; partner and admin sessions live in separate realms/cookies.
+- **Security:** HttpOnly + SameSite=Strict session cookies (server-side, hashed), per-session CSRF tokens, Origin checks, login throttling, scrypt hashing, Zod `.safeParse()` on every input and stored row, no scripts / inline styles (CSP `default-src 'none'`).
+- **Publishing:** Admin → *Innhold* → *Publiser* writes `src/data/cms-overrides.json`; commit + push to rebuild the static site with new copy, prices and slot status.
+- **Lead intake:** `POST /api/leads/ingest` on the admin port with `Authorization: Bearer $PLATFORM_INGEST_TOKEN` (body = `StoredLeadRecordSchema`). Leads auto-route to the active exclusive partner when enabled.
+- **Data:** SQLite at `data/platform.db` (git-ignored). Back it up.
+- To expose the business portal publicly, set `PARTNER_HOST=0.0.0.0`, put it behind HTTPS (reverse proxy) and set `PLATFORM_SECURE_COOKIES=1`. Keep the admin console on localhost/VPN.

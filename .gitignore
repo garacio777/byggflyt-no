@@ -7,11 +7,12 @@ dist/
 # Dependencies
 node_modules/
 
-# Local environment secrets
+# Local environment secrets & runtime SQLite state
 .env
 .env.*
 !.env.example
 .dev.vars
+/data/
 
 # OS & logs
 .DS_Store

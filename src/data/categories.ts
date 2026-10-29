@@ -1,4 +1,5 @@
 import type { CategorySlug } from "../schemas/directory.js";
+import { getStaticCmsConfig } from "./cms-loader.js";
 
 export interface CategoryProfile {
   readonly slug: CategorySlug;
@@ -21,7 +22,7 @@ export interface CategoryProfile {
   readonly retainerMultiplier: number;
 }
 
-export const CATEGORIES: readonly CategoryProfile[] = [
+export const BASE_CATEGORIES: readonly CategoryProfile[] = [
   {
     slug: "maskinutleie",
     title: "Maskinutleie, Gravemaskin og Komprimering",
@@ -208,6 +209,20 @@ export const CATEGORIES: readonly CategoryProfile[] = [
     retainerMultiplier: 1.05
   }
 ] as const;
+
+export const CATEGORIES: readonly CategoryProfile[] = BASE_CATEGORIES.map((cat) => {
+  const cms = getStaticCmsConfig();
+  const ov = cms.categoryOverrides[cat.slug];
+  if (!ov) return cat;
+  return {
+    ...cat,
+    shortTitle: ov.shortTitle ?? cat.shortTitle,
+    heroTagline: ov.heroTagline ?? cat.heroTagline,
+    baseDailyRateNok: ov.baseDailyRateNok ?? cat.baseDailyRateNok,
+    typicalTicketRangeNok: ov.typicalTicketRangeNok ?? cat.typicalTicketRangeNok,
+    retainerMultiplier: ov.retainerMultiplier ?? cat.retainerMultiplier
+  };
+});
 
 export function getCategoryBySlug(slug: CategorySlug): CategoryProfile {
   const match = CATEGORIES.find((item) => item.slug === slug);

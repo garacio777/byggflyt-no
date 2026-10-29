@@ -1,4 +1,5 @@
 import type { MunicipalitySlug } from "../schemas/directory.js";
+import { getStaticCmsConfig } from "./cms-loader.js";
 
 export interface MunicipalityProfile {
   readonly slug: MunicipalitySlug;
@@ -18,7 +19,7 @@ export interface MunicipalityProfile {
   readonly baseMonthlyTerritoryNok: number;
 }
 
-export const MUNICIPALITIES: readonly MunicipalityProfile[] = [
+export const BASE_MUNICIPALITIES: readonly MunicipalityProfile[] = [
   {
     slug: "oslo",
     name: "Oslo",
@@ -210,6 +211,21 @@ export const MUNICIPALITIES: readonly MunicipalityProfile[] = [
     baseMonthlyTerritoryNok: 10400
   }
 ] as const;
+
+export const MUNICIPALITIES: readonly MunicipalityProfile[] = BASE_MUNICIPALITIES.map((mun) => {
+  const cms = getStaticCmsConfig();
+  const ov = cms.municipalityOverrides[mun.slug];
+  if (!ov) return mun;
+  return {
+    ...mun,
+    frostDepthCm: ov.frostDepthCm ?? mun.frostDepthCm,
+    designWinterTempC: ov.designWinterTempC ?? mun.designWinterTempC,
+    flatbedTransferNokRange: ov.flatbedTransferNokRange ?? mun.flatbedTransferNokRange,
+    baseMonthlyTerritoryNok: ov.baseMonthlyTerritoryNok ?? mun.baseMonthlyTerritoryNok,
+    emissionPolicySummary: ov.emissionPolicySummary ?? mun.emissionPolicySummary,
+    groundConditionProfile: ov.groundConditionProfile ?? mun.groundConditionProfile
+  };
+});
 
 export function getMunicipalityBySlug(slug: MunicipalitySlug): MunicipalityProfile {
   const match = MUNICIPALITIES.find((item) => item.slug === slug);

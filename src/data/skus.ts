@@ -1,4 +1,5 @@
 import type { CategorySlug } from "../schemas/directory.js";
+import { getStaticCmsConfig } from "./cms-loader.js";
 
 export interface EquipmentSkuSpecRow {
   readonly label: string;
@@ -29,7 +30,7 @@ export interface EquipmentSku {
   readonly prefilledOrderLine: string;
 }
 
-export const EQUIPMENT_SKUS: readonly EquipmentSku[] = [
+export const BASE_EQUIPMENT_SKUS: readonly EquipmentSku[] = [
   // 1. MASKINUTLEIE (4 SKUs)
   {
     skuCode: "SKU-EX-025EL",
@@ -500,6 +501,22 @@ export const EQUIPMENT_SKUS: readonly EquipmentSku[] = [
     prefilledOrderLine: "65 tm kranbil m/ jibb, vinsj og utslippsfri e-PTO til montasjeløft av takstoler/moduler."
   }
 ] as const;
+
+export const EQUIPMENT_SKUS: readonly EquipmentSku[] = BASE_EQUIPMENT_SKUS.filter((sku) => {
+  const cms = getStaticCmsConfig();
+  return cms.skuRateOverrides[sku.skuCode]?.hidden !== true;
+}).map((sku) => {
+  const cms = getStaticCmsConfig();
+  const ov = cms.skuRateOverrides[sku.skuCode];
+  if (!ov) return sku;
+  return {
+    ...sku,
+    dailyRateNok: ov.dailyRateNok ?? sku.dailyRateNok,
+    weeklyRateNok: ov.weeklyRateNok ?? sku.weeklyRateNok,
+    monthlyRateNok: ov.monthlyRateNok ?? sku.monthlyRateNok,
+    featured: ov.featured ?? sku.featured
+  };
+});
 
 export function getSkusByCategory(categorySlug: CategorySlug): readonly EquipmentSku[] {
   return EQUIPMENT_SKUS.filter((sku) => sku.categorySlug === categorySlug);

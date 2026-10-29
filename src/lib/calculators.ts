@@ -1,5 +1,6 @@
 import type { CategorySlug, MunicipalitySlug } from "../schemas/directory.js";
 import { getCategoryBySlug } from "../data/categories.js";
+import { getStaticCmsConfig } from "../data/cms-loader.js";
 import { getMunicipalityBySlug } from "../data/municipalities.js";
 
 export interface ExcavatorCalcInput {
@@ -339,20 +340,29 @@ export function getTerritorySlotInfo(
 ): TerritorySlotInfo {
   const municipality = getMunicipalityBySlug(municipalitySlug);
   const category = getCategoryBySlug(categorySlug);
-  const monthlyLeaseNok =
+  const cms = getStaticCmsConfig();
+  const slotKey = `${municipalitySlug}__${categorySlug}`;
+  const computedMonthlyNok =
     Math.round((municipality.baseMonthlyTerritoryNok * category.retainerMultiplier) / 100) * 100;
+  const monthlyLeaseNok = cms.slotPriceOverrides[slotKey] ?? computedMonthlyNok;
 
   const demandBase = Math.round(municipality.baseMonthlyTerritoryNok / 950);
   const estMonthlyLeadsMin = Math.max(5, demandBase);
   const estMonthlyLeadsMax = Math.max(11, Math.round(demandBase * 2.1));
 
+  const statusOverride = cms.slotStatusOverrides[slotKey];
+  const slotAvailability: "AVAILABLE_FOR_EXCLUSIVE_LEASE" | "WAITLIST_ONLY" =
+    statusOverride === "WAITLIST_ONLY" || statusOverride === "LEASED_EXCLUSIVE"
+      ? "WAITLIST_ONLY"
+      : "AVAILABLE_FOR_EXCLUSIVE_LEASE";
+
   return {
-    slotKey: `${municipalitySlug}__${categorySlug}`,
+    slotKey,
     municipalitySlug,
     categorySlug,
     monthlyLeaseNok,
     estMonthlyLeadsMin,
     estMonthlyLeadsMax,
-    slotAvailability: "AVAILABLE_FOR_EXCLUSIVE_LEASE"
+    slotAvailability
   };
 }
