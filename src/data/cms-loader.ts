@@ -1,4 +1,4 @@
-import rawCmsJson from "./cms-overrides.json" with { type: "json" };
+import { RAW_CMS_OVERRIDES } from "./cms-overrides.js";
 import { SiteCmsConfigSchema, type SiteCmsConfig } from "../schemas/platform.js";
 
 const DEFAULT_CMS_CONFIG: SiteCmsConfig = {
@@ -25,7 +25,7 @@ const DEFAULT_CMS_CONFIG: SiteCmsConfig = {
 };
 
 export function getStaticCmsConfig(): SiteCmsConfig {
-  const parsed = SiteCmsConfigSchema.safeParse(rawCmsJson);
+  const parsed = SiteCmsConfigSchema.safeParse(RAW_CMS_OVERRIDES);
   if (parsed.success) {
     return parsed.data;
   }

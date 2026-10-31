@@ -445,7 +445,7 @@ export async function verifySmtpConnection(
   const probe = async (): Promise<{ banner: string; tlsUpgraded: boolean; authOk: true }> => {
     const conn = await openAuthenticatedSession(cfg);
     holder.socket = conn.socket;
-    await conn.session.command("QUIT", [221]).catch(() => null);
+    await conn.session.command("QUIT", [221]).catch((): null => null);
     conn.session.detach();
     conn.socket.destroy();
     return { banner: conn.banner, tlsUpgraded: conn.tlsUpgraded, authOk: true };
@@ -487,7 +487,7 @@ export async function sendSmtpMessage(
     await conn.session.command(`RCPT TO:<${cfg.notifyEmail}>`, [250, 251]);
     await conn.session.command("DATA", [354]);
     const queued = await conn.session.command(`${dotStuffed}\r\n.`, [250], "DATA END");
-    await conn.session.command("QUIT", [221]).catch(() => null);
+    await conn.session.command("QUIT", [221]).catch((): null => null);
     conn.session.detach();
     conn.socket.destroy();
 

@@ -138,9 +138,14 @@ export class CmsStore {
     return this.save(mutator(structuredClone(this.get())));
   }
 
-  /** Writes the live config to src/data/cms-overrides.json so the next static build picks it up. */
+  /** Writes the live config to src/data/cms-overrides.{json,ts} so the next static build picks it up. */
   publish(): string {
-    writeFileSync(this.publishPath, `${JSON.stringify(this.get(), null, 2)}\n`, "utf8");
+    const serialized = JSON.stringify(this.get(), null, 2);
+    writeFileSync(this.publishPath, `${serialized}\n`, "utf8");
+    if (this.publishPath.endsWith(".json")) {
+      const tsPath = `${this.publishPath.slice(0, -5)}.ts`;
+      writeFileSync(tsPath, `export const RAW_CMS_OVERRIDES: unknown = ${serialized};\n`, "utf8");
+    }
     return this.publishPath;
   }
 }
