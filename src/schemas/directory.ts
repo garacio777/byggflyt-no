@@ -25,6 +25,7 @@ export type MunicipalitySlug = z.infer<typeof MunicipalitySlugEnum>;
 export type CategorySlug = z.infer<typeof CategorySlugEnum>;
 
 export const DeliveryChannelEnum = z.enum([
+  "EMAIL_SMTP",
   "PARTNER_WEBHOOK",
   "SLACK_WEBHOOK",
   "EMAIL_RESEND",
@@ -171,7 +172,7 @@ export const LeadDispatchConfirmationSchema = z
   .object({
     leadReferenceId: z.string().regex(/^BF-[0-9]{6}-[A-Z0-9]{4}$/),
     status: z.enum(["ROUTED_EXCLUSIVE_PARTNER", "QUEUED_TERRITORY_DESK"]),
-    deliveryChannels: z.array(DeliveryChannelEnum).min(1).max(4),
+    deliveryChannels: z.array(DeliveryChannelEnum).min(1).max(5),
     selectedSkuCode: SkuCodeSchema.optional(),
     territorySlotKey: z.string().min(4).max(90),
     municipalityName: z.string().min(2).max(80),
@@ -215,6 +216,7 @@ export const PartnerInquiryConfirmationSchema = z
     applicationId: z.string().regex(/^PARTNER-[0-9]{6}-[A-Z0-9]{4}$/),
     territorySlotKey: z.string().min(4).max(90),
     slotAvailability: z.enum(["AVAILABLE_FOR_EXCLUSIVE_LEASE", "WAITLIST_ONLY"]),
+    deliveryChannels: z.array(DeliveryChannelEnum).min(1).max(5).optional(),
     estimatedMonthlyLeadsMin: z.number().int().min(1).max(200),
     estimatedMonthlyLeadsMax: z.number().int().min(1).max(400),
     suggestedMonthlyRetainerNok: z.number().int().min(3000).max(95000),
