@@ -167,5 +167,22 @@ const isStrictZeroEmission = municipality.emissionPolicyLevel === "STRENG_UTSLIP
     </div>
   </section>
 
+  <section class="section-block">
+    <div class="container">
+      <div class="partner-callout">
+        <div>
+          <span class="badge badge-partner-open">LEDIG PARTNER-TERRITORIUM I {municipality.shortName.toUpperCase()}</span>
+          <h2 class="card-title">Driver dere utleiedepot eller anleggsdrift i {municipality.name}?</h2>
+          <p class="card-text">
+            Reserver eksklusiv tilgang til Brreg-verifiserte B2B-oppdrag i {municipality.name} uten budrunde mot konkurrenter.
+          </p>
+        </div>
+        <a href={`/bli-partner/?kommune=${municipality.slug}#reservasjon`} class="btn btn-dark btn-sm">
+          Reserver territorium →
+        </a>
+      </div>
+    </div>
+  </section>
+
   <script src="../../scripts/directory-client.ts"></script>
 </BaseLayout>

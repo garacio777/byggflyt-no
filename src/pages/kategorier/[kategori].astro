@@ -147,5 +147,22 @@ const { category } = Astro.props;
     </div>
   </section>
 
+  <section class="section-block">
+    <div class="container">
+      <div class="partner-callout">
+        <div>
+          <span class="badge badge-partner-open">RANK &amp; RENT FAGPARTNER</span>
+          <h2 class="card-title">Leverer dere {category.shortTitle.toLowerCase()} på Østlandet?</h2>
+          <p class="card-text">
+            Velg kommune og lås 48-timers uforpliktende reservasjon på eksklusiv B2B-leadruting innen {category.shortTitle.toLowerCase()}.
+          </p>
+        </div>
+        <a href={`/bli-partner/?kategori=${category.slug}#reservasjon`} class="btn btn-dark btn-sm">
+          Se ledige soner →
+        </a>
+      </div>
+    </div>
+  </section>
+
   <script src="../../scripts/directory-client.ts"></script>
 </BaseLayout>

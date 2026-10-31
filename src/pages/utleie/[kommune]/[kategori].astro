@@ -241,7 +241,12 @@ const localFaqs = [
               <strong>{slotInfo.monthlyLeaseNok.toLocaleString("nb-NO")} kr/mnd eks. mva</strong>.
             </p>
           </div>
-          <a href="/bli-partner/" class="btn btn-dark btn-sm">Reserver territorium →</a>
+          <a
+            href={`/bli-partner/?kommune=${municipality.slug}&kategori=${category.slug}#reservasjon`}
+            class="btn btn-dark btn-sm"
+          >
+            Reserver territorium →
+          </a>
         </div>
 
         <div class="grid-2">

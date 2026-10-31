@@ -14,34 +14,20 @@ Specs-First, utility-led B2B Rank-and-Rent directory for the Norwegian construct
   3. Teletining- & Byggvarme-kalkulator (`kW` + matter + tinetid)
   4. Utslippsfri Byggestrøm (`32A/63A/125A`) & Mobil Batteribank (`BESS`) + Dag-1 Brakkerigg
   5. Masseberegner (`fm³ → lm³` / tonnasje) & TEK17 § 9-6 `≥70%` Avfallscontainer-velger
-- **Stateless Zone 4 Edge Verification & Lead Routing (`functions/api/` + `api/`):**
-  - `GET /api/verify-org?orgnr=...` — Modulus-11 checksum + live Brønnøysundregistrene (`data.brreg.no`) B2B lookup
-  - `POST /api/submit-lead` — Zod-validated contractor lead dispatch + NOK contract bracket estimation
-  - `POST /api/partner-inquiry` — 48h territory exclusivity reservation for local rental & contracting partners
+- **Frictionless Public B2B Lead & Partner Onboarding (`api/` + `functions/`):**
+  - **Public Partner Onboarding (`/bli-partner/` → `POST /api/partner-inquiry`):** Rental companies pick an exclusive `[Kommune × Fagområde]` zone directly on the live site (or via 1-click prefill from any local page), auto-verify their 9-digit org.nr via live Brønnøysundregistrene (`GET /api/verify-org`), and lock a 48-hour territory reservation — **zero passwords or separate portal logins required**.
+  - **Contractor B2B Dispatch (`POST /api/submit-lead`):** Zod-validated B2B order specs + NOK contract bracket estimation.
+  - **Direct Mailbox ESMTP (`functions/lib/smtp-node.ts`):** Zero-dependency `STARTTLS` submission (`smtp.protonmail.ch:587` or Domeneshop) straight to `BOOKING_NOTIFY_EMAIL` with `Reply-To` set to the applicant, guarded by an all-or-nothing `SMTP_USER` + `SMTP_PASSWORD` + `BOOKING_NOTIFY_EMAIL` check.
 
 ## Commands
 ```bash
 npm ci --ignore-scripts
 npm run typecheck
 npm run build
+npm run email:test              # sends live verification email via Direct Mailbox SMTP
+npm run email:test -- --auth-only
 npm run preview
 ```
 
-## Platform Control Plane (`platform/`) — Business Dashboards & Admin Console
-Self-hosted Node 22 service with **zero extra runtime dependencies** (built-in `node:sqlite`, `node:http`, `node:crypto`/scrypt). The public site stays a static Astro build.
-
-| Server | Default URL | Who |
-|---|---|---|
-| Business portal | `http://127.0.0.1:4323` | Businesses register (org.nr Modulus-11), log in, edit their profile, list equipment, request exclusive territories, work their leads |
-| Admin console | `http://127.0.0.1:4322` (localhost only) | Owner approves/suspends businesses, moderates equipment, prices/assigns territories, routes leads, edits site copy & SKU prices |
-
-```bash
-npm run platform          # starts both servers; first run prints a one-time admin access code
-```
-
-- **Tenant isolation:** every business query is scoped to the logged-in business id; partner and admin sessions live in separate realms/cookies.
-- **Security:** HttpOnly + SameSite=Strict session cookies (server-side, hashed), per-session CSRF tokens, Origin checks, login throttling, scrypt hashing, Zod `.safeParse()` on every input and stored row, no scripts / inline styles (CSP `default-src 'none'`).
-- **Publishing:** Admin → *Innhold* → *Publiser* writes `src/data/cms-overrides.json`; commit + push to rebuild the static site with new copy, prices and slot status.
-- **Lead intake:** `POST /api/leads/ingest` on the admin port with `Authorization: Bearer $PLATFORM_INGEST_TOKEN` (body = `StoredLeadRecordSchema`). Leads auto-route to the active exclusive partner when enabled.
-- **Data:** SQLite at `data/platform.db` (git-ignored). Back it up.
-- To expose the business portal publicly, set `PARTNER_HOST=0.0.0.0`, put it behind HTTPS (reverse proxy) and set `PLATFORM_SECURE_COOKIES=1`. Keep the admin console on localhost/VPN.
+## Optional Local Admin / CMS Tool (`platform/`)
+Self-hosted local Node 22 tool (`npm run platform` on `127.0.0.1:4322` / `4323`) for offline CMS overrides (`src/data/cms-overrides.json`). Not required in production — live partner reservations and contractor leads flow directly through `/bli-partner/` and `/api/*` via Direct Mailbox SMTP.
