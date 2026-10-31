@@ -11,6 +11,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "typecheck": "tsc --noEmit && tsc --noEmit -p platform",
+    "test": "node --disable-warning=ExperimentalWarning --import ./platform/register.mjs --test tests/smtp-and-dispatch.test.ts",
     "email:test": "node --env-file-if-exists=.env --env-file-if-exists=.env.local --disable-warning=ExperimentalWarning --import ./platform/register.mjs scripts/test-email.ts",
     "platform": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning --import ./platform/register.mjs platform/start.ts",
     "astro": "astro"
